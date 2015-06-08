@@ -50,7 +50,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.currentDir = self.dlg.get_currentdir()
             self.files = self.dlg.get_files()
             self.PATH = self.dlg.get_path()
-            self.checkboxes = {}
+            self.checkboxes = []
             self.songs = {}
             self.make_Table()
         else:
@@ -130,7 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.falbums.append(self.songs[path].get_album())
             i = 0
                 
-    def get_genres(self):
+    def get_genresBoxes(self):
         """
         Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
         """
@@ -142,7 +142,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.genreLayout.setWidget(i, 0, self.checkBox)
         self.checkBox.setText('cs')
         self.checkBox.stateChanged.connect(self.checkCheckboxes)
-        self.checkboxes.setdefault('cs', self.checkBox)
+        self.checkboxes.append(self.checkBox)
         i = 1
         for genre in self.fgenres:
             self.checkBox = QCheckBox(self.genreWidget)
@@ -151,10 +151,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.genreLayout.setWidget(i, 0, self.checkBox)
             self.checkBox.setText(genre)
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.setdefault(genre, self.checkBox)
+            self.checkboxes.append(self.checkBox)
             i += 1
             
-    def get_interpreter(self):
+    def get_interpreterBoxes(self):
         """
         Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
         """
@@ -166,10 +166,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.interpreterLayout.setWidget(i, 0, self.checkBox)
             self.checkBox.setText(interpreter)
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.setdefault(interpreter, self.checkBox)
+            self.checkboxes.append(self.checkBox)
             i += 1
             
-    def get_album(self):
+    def get_albumBoxes(self):
         """
         Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
         """
@@ -181,43 +181,153 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.albumLayout.setWidget(i, 0, self.checkBox)
             self.checkBox.setText(album)
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.setdefault(album, self.checkBox)
+            self.checkboxes.append(self.checkBox)
             i += 1
+            
+    def checkBoxTypes(self):
+        type = 0
+        self.genrecount = 0
+        self.albumcount = 0
+        self.interpretercount = 0
+        genre = False
+        album = False
+        interpreter = False
+        self.activatedcheckboxes = {}
+        checkboxlist = []
+        checkboxlist.append([])
+        checkboxlist.append([])
+        checkboxlist.append([])
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                if checkbox.parentWidget() == self.genreWidget:
+                    if not genre:
+                        genre = True
+                        type += 1
+                    checkboxlist[0].append(checkbox.text())
+                    self.genrecount += 1
+                    
+                if checkbox.parentWidget() == self.albumWidget:
+                    if not album:
+                        album = True
+                        type += 2
+                    checkboxlist[1].append(checkbox.text())
+                    self.albumcount += 1
+                
+                if  checkbox.parentWidget() == self.interpreterWidget:
+                    if not interpreter:
+                        interpreter = True
+                        type += 4
+                    checkboxlist[2].append(checkbox.text())
+                    self.interpretercount += 1
+                    
+                if genre:
+                    self.activatedcheckboxes.setdefault('genre', checkboxlist[0])
+                if album:
+                    self.activatedcheckboxes.setdefault('album', checkboxlist[1])
+                if interpreter:
+                    self.activatedcheckboxes.setdefault('interpreter', checkboxlist[2])
+        return type
     
     def checkCheckboxes(self):
         """
         Überprüft die aktivierten Checkboxen und gibt die gesuchten Resultate aus.
         """
-        i=0
-        activatedcheckboxes = []
-        for checkbox in self.checkboxes:
-            if self.checkboxes[checkbox].isChecked():
-                i += 1
-                activatedcheckboxes.append(checkbox)
-        if i:
-            self.reload_Table(activatedcheckboxes,  i)
+        type = self.checkBoxTypes()
+        self.filtersongs = []
+        self.genrefiltersongs = []
+        self.albumfiltersongs = []
+        self.interpreterfiltersongs = []
+        self.genrefiltered = False
+        self.albumfiltered = False
+        self.interpreterfiltered = False
+        for song in self.songs:
+            self.filtersongs.append(self.songs[song])
+        if type & 1:
+            self.filter_genre(self.activatedcheckboxes)
+            
+        if type & 2:
+            self.filter_album(self.activatedcheckboxes)
+            
+        if type & 4:
+            self.filter_interpreter(self.activatedcheckboxes)
+            
+        if type:
+            self.reload_Table()
         else:
             #Falls nichts ausgewählt wurde wird die komplette Liste ausgegeben.
             self.fill_Table()
+            
+    def filter_genre(self, titles):
+        self.genrefiltered = True
+        for song in self.filtersongs:
+            i = 0
+            sgenres = song.get_genres()
+            cs = song.get_cs()
+            for genre in sgenres:
+                for key in titles:
+                    for title in titles[key]:
+                        if key == 'genre':
+                            if title == genre or (cs and title == 'cs'):
+                                print title
+                                print genre
+                                i += 1
+                                if i == self.genrecount:
+                                    self.genrefiltersongs.append(song)
+                            
+    def filter_album(self, titles):
+        self.albumfiltered = True
+        if self.genrefiltersongs:
+            songs = self.genrefiltersongs
+        else:
+            songs = self.filtersongs
+        for song in songs:
+            i = 0
+            album = song.get_album()
+            for key in titles:
+                for title in titles[key]:
+                    if key == 'album':
+                        if title == album:
+                            i += 1
+                            if i == self.albumcount:
+                                self.albumfiltersongs.append(song)
+            
+            
+    def filter_interpreter(self, titles):
+        self.interpreterfiltered= True
+        if self.albumfiltersongs:
+            songs = self.albumfiltersongs
+        elif self.genrefiltersongs:
+            songs = self.genrefiltersongs
+        else:
+            songs = self.filtersongs
+        for song in songs:
+            i = 0
+            interpreter = song.get_interpreter()
+            for key in titles:
+                for title in titles[key]:
+                    if key == 'interpreter':
+                        if title == interpreter:
+                            i += 1
+                            if i == self.interpretercount:
+                                self.interpreterfiltersongs.append(song)
+            
         
-    def reload_Table(self, titles, count):
+    def reload_Table(self):
         """
         Gibt nur die gesuchten Genres in der Liste aus.
         """
-        while (self.tableWidget.rowCount() > 0):
-            self.tableWidget.removeRow(0)
-        for song in self.songs:
-            i = 0
-            sgenres = self.songs[song].get_genres()
-            cs = self.songs[song].get_cs()
-            for genre in sgenres:
-                for title in titles:
-                    if title == genre or (cs and title == 'cs'):
-                        i += 1
-                        if i == count:
-                            self.add_line(song)
-                    
-    
+        self.tableWidget.setRowCount(0)
+        if self.interpreterfiltered:
+            pastes = self.interpreterfiltersongs
+            
+        elif self.albumfiltered:
+            pastes = self.albumfiltersongs
+            
+        else:
+            pastes = self.genrefiltersongs
+        for paste in pastes:
+            self.add_line(paste.get_path())
+        
     def genrefactory(self, path, genres):
         for genre in genres:
             self.genreadd(path, genre)
@@ -335,16 +445,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.get_fileGenres()
         self.get_fileAlbums()
         self.get_fileInterpreters()
-        self.get_interpreter()
-        self.get_genres()
-        self.get_album()
+        self.get_interpreterBoxes()
+        self.get_albumBoxes()
+        self.get_genresBoxes()
     
     def fill_Table(self):
         """
         Füllt die Tabelle komplett mit allen Songs.
         """
-        while (self.tableWidget.rowCount() > 0):
-            self.tableWidget.removeRow(0)
+        self.tableWidget.setRowCount(0)
             
         for path in self.songs:
             self.add_line(path)
@@ -637,9 +746,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.gdlg = Genre(self.c, self.conn, self.Spath)
             self.gdlg.exec_()
             for checkbox in self.checkboxes:
-                self.genreLayout.removeWidget(self.checkboxes[checkbox])
-                self.checkboxes[checkbox].hide()
-            self.checkboxes.clear()
+                self.genreLayout.removeWidget(checkbox)
+                checkbox.hide()
+            self.checkboxes = []
             self.create_object(self.Spath)
             self.get_genres()
             self.update_db()
@@ -775,14 +884,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if itemId == -5:
             self.dlg = SearchDialog()
             self.dlg.exec_()
-            keys = []
-            for song in self.songs:
-                keys.append(song)
-            for key in keys:
-                self.songs.pop(key, None)
+            self.songs = {}
             for checkbox in self.checkboxes:
-                self.genreLayout.removeWidget(self.checkboxes[checkbox])
-                self.checkboxes[checkbox].hide()
+                self.genreLayout.removeWidget(checkbox)
+                checkbox.hide()
             self.checkboxes.clear()
             self.currentDir = self.dlg.get_currentdir()
             self.files = self.dlg.get_files()
@@ -800,3 +905,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if itemId == -7:
             info = Info()
             info.exec_()
+    
+    @pyqtSignature("")
+    def on_filterResetButton_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        for checkbox in self.checkboxes:
+            checkbox.setChecked(False)
