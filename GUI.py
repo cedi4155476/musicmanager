@@ -11,6 +11,7 @@ import os.path
 import random
 from mutagen.easyid3 import *
 from mutagen.mp3 import MP3
+import xml.etree.cElementTree as ET
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -44,6 +45,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.volume = self.c.fetchone()['volume']
         self.tableWidget.hideColumn(0)
         self.playlistWidget.hideColumn(0)
+        self.newPlaylistWidget.hideColumn(0)
+        self.newPlaylistWidget.drop.connect(self.drop)
+        self.playlistWidget.drop.connect(self.drop)
         self.dlg = SearchDialog()
         ret = self.dlg.exec_()
         if ret == QDialog.Accepted:
@@ -184,6 +188,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.checkboxes.append(self.checkBox)
             i += 1
             
+    def get_allBoxes(self):
+        for checkbox in self.checkboxes:
+            self.genreLayout.removeWidget(checkbox)
+            self.albumLayout.removeWidget(checkbox)
+            self.interpreterLayout.removeWidget(checkbox)
+            checkbox.hide()
+        self.checkboxes = []
+        
+        self.get_fileGenres()
+        self.get_fileAlbums()
+        self.get_fileInterpreters()
+        
+        self.get_interpreterBoxes()
+        self.get_albumBoxes()
+        self.get_genresBoxes()
+            
     def checkBoxTypes(self):
         type = 0
         self.genrecount = 0
@@ -261,15 +281,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.genrefiltered = True
         for song in self.filtersongs:
             i = 0
+            cscleared = False
             sgenres = song.get_genres()
             cs = song.get_cs()
             for genre in sgenres:
                 for key in titles:
                     for title in titles[key]:
                         if key == 'genre':
-                            if title == genre or (cs and title == 'cs'):
-                                print title
-                                print genre
+                            if title == genre or (title == 'cs' and cs and not cscleared):
+                                if cs and not cscleared:
+                                    cscleared = True
                                 i += 1
                                 if i == self.genrecount:
                                     self.genrefiltersongs.append(song)
@@ -441,13 +462,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.load.close()
                 
         self.fill_Table()
-        
-        self.get_fileGenres()
-        self.get_fileAlbums()
-        self.get_fileInterpreters()
-        self.get_interpreterBoxes()
-        self.get_albumBoxes()
-        self.get_genresBoxes()
+        self.get_allBoxes()
     
     def fill_Table(self):
         """
@@ -616,6 +631,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return True
         else:
             return False
+            
+    def create_playlist(self):
+        newplaylist = []
+#        for row in len(self.newPlaylistWidget.getColumnCount)
+        playlist = ET.Element("playlist")
+        for path in newplaylist:
+            song = ET.SubElement(playlist,  "song")
+            ET.SubElement(song, "field1", name="played").text = 0
+            ET.SubElement(song, "field2", name="path").text = path
+        tree = ET.ElementTree(playlist)
+        tree.write("playlists/test.xml")
+        
+        
                 
     def playlist_load(self):
         if not self.playlist_exists():
@@ -745,14 +773,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             del self.songs[self.Spath]
             self.gdlg = Genre(self.c, self.conn, self.Spath)
             self.gdlg.exec_()
-            for checkbox in self.checkboxes:
-                self.genreLayout.removeWidget(checkbox)
-                checkbox.hide()
-            self.checkboxes = []
             self.create_object(self.Spath)
-            self.get_genres()
             self.update_db()
             self.update_file()
+            self.get_allBoxes()
             self.fill_row()
     
     @pyqtSignature("")
@@ -771,6 +795,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.songs[self.Spath].update(title, album, interpreter, comment,  cs, rating)
             self.update_db()
+            self.get_allBoxes()
             self.update_file()
             self.fill_row()
     
@@ -791,6 +816,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Slot documentation goes here.
         """
+        
+        self.playlist = self.playlistWidget.items()
+        self.playlistWidget.setRowCount(0)
+        
+        
         if self.playlist_exists():
             self.c.execute('DELETE FROM playlist')
             self.conn.commit()
@@ -913,3 +943,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
+            
+    
+    def drop(self, item):
+        print "hi"
+        
+    def drag(self, drag):
+        print drag.mimeData()
+    
+    @pyqtSignature("")
+    def on_playlistSaveButton_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        # TODO: not implemented yet
+        raise NotImplementedError
+    
+    @pyqtSignature("")
+    def on_createPlaylistButton_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        self.create_playlist()

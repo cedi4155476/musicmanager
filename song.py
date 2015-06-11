@@ -42,6 +42,9 @@ class Song(object):
     def get_chance(self):
         return self.chance
         
+    def get_title(self):
+        return self.title
+        
     def get_album(self):
         return self.album
         
