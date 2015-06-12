@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/GUI.ui'
 #
-# Created: Thu Jun 11 16:05:38 2015
+# Created: Fri Jun 12 17:19:52 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -449,7 +449,13 @@ class Ui_MainWindow(object):
         self.playlistInfo.setObjectName(_fromUtf8("playlistInfo"))
         self.verticalLayout_11 = QtGui.QVBoxLayout(self.playlistInfo)
         self.verticalLayout_11.setObjectName(_fromUtf8("verticalLayout_11"))
-        self.playlistWidget = MyDropTable(self.playlistInfo)
+        self.currentPlaylistLabel = QtGui.QLabel(self.playlistInfo)
+        self.currentPlaylistLabel.setText(_fromUtf8(""))
+        self.currentPlaylistLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.currentPlaylistLabel.setMargin(4)
+        self.currentPlaylistLabel.setObjectName(_fromUtf8("currentPlaylistLabel"))
+        self.verticalLayout_11.addWidget(self.currentPlaylistLabel)
+        self.playlistWidget = QtGui.QTableWidget(self.playlistInfo)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -462,8 +468,8 @@ class Ui_MainWindow(object):
         self.playlistWidget.setTabKeyNavigation(False)
         self.playlistWidget.setProperty("showDropIndicator", False)
         self.playlistWidget.setDragDropOverwriteMode(False)
-        self.playlistWidget.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
-        self.playlistWidget.setDefaultDropAction(QtCore.Qt.CopyAction)
+        self.playlistWidget.setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+        self.playlistWidget.setDefaultDropAction(QtCore.Qt.IgnoreAction)
         self.playlistWidget.setAlternatingRowColors(True)
         self.playlistWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.playlistWidget.setTextElideMode(QtCore.Qt.ElideNone)
@@ -479,7 +485,9 @@ class Ui_MainWindow(object):
         self.playlistWidget.setHorizontalHeaderItem(1, item)
         item = QtGui.QTableWidgetItem()
         self.playlistWidget.setHorizontalHeaderItem(2, item)
+        self.playlistWidget.horizontalHeader().setHighlightSections(False)
         self.playlistWidget.verticalHeader().setVisible(False)
+        self.playlistWidget.verticalHeader().setDefaultSectionSize(20)
         self.playlistWidget.verticalHeader().setHighlightSections(False)
         self.verticalLayout_11.addWidget(self.playlistWidget)
         self.playlistSaveButton = QtGui.QPushButton(self.playlistInfo)
@@ -519,15 +527,21 @@ class Ui_MainWindow(object):
         self.newPlaylistTab.setObjectName(_fromUtf8("newPlaylistTab"))
         self.verticalLayout_12 = QtGui.QVBoxLayout(self.newPlaylistTab)
         self.verticalLayout_12.setObjectName(_fromUtf8("verticalLayout_12"))
-        self.newPlaylistWidget = MyDropTable(self.newPlaylistTab)
+        self.newPlaylistLineEdit = QtGui.QLineEdit(self.newPlaylistTab)
+        self.newPlaylistLineEdit.setAlignment(QtCore.Qt.AlignCenter)
+        self.newPlaylistLineEdit.setObjectName(_fromUtf8("newPlaylistLineEdit"))
+        self.verticalLayout_12.addWidget(self.newPlaylistLineEdit)
+        self.newPlaylistWidget = QtGui.QTableWidget(self.newPlaylistTab)
         self.newPlaylistWidget.setFrameShape(QtGui.QFrame.NoFrame)
         self.newPlaylistWidget.setFrameShadow(QtGui.QFrame.Plain)
         self.newPlaylistWidget.setLineWidth(0)
         self.newPlaylistWidget.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.newPlaylistWidget.setTabKeyNavigation(False)
+        self.newPlaylistWidget.setProperty("showDropIndicator", False)
         self.newPlaylistWidget.setDragDropOverwriteMode(False)
-        self.newPlaylistWidget.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
-        self.newPlaylistWidget.setDefaultDropAction(QtCore.Qt.CopyAction)
+        self.newPlaylistWidget.setDragDropMode(QtGui.QAbstractItemView.NoDragDrop)
+        self.newPlaylistWidget.setDefaultDropAction(QtCore.Qt.IgnoreAction)
+        self.newPlaylistWidget.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.newPlaylistWidget.setShowGrid(False)
         self.newPlaylistWidget.setGridStyle(QtCore.Qt.NoPen)
         self.newPlaylistWidget.setWordWrap(False)
@@ -541,7 +555,9 @@ class Ui_MainWindow(object):
         self.newPlaylistWidget.setHorizontalHeaderItem(1, item)
         item = QtGui.QTableWidgetItem()
         self.newPlaylistWidget.setHorizontalHeaderItem(2, item)
+        self.newPlaylistWidget.horizontalHeader().setHighlightSections(False)
         self.newPlaylistWidget.verticalHeader().setVisible(False)
+        self.newPlaylistWidget.verticalHeader().setDefaultSectionSize(20)
         self.newPlaylistWidget.verticalHeader().setHighlightSections(False)
         self.verticalLayout_12.addWidget(self.newPlaylistWidget)
         self.createPlaylistButton = QtGui.QPushButton(self.newPlaylistTab)
@@ -574,7 +590,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(0)
-        self.playlistTab.setCurrentIndex(2)
+        self.playlistTab.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -625,6 +641,7 @@ class Ui_MainWindow(object):
         self.playbutton.setText(_translate("MainWindow", "Playlist Random Play", None))
         self.playlistTab.setTabText(self.playlistTab.indexOf(self.playlistInfo), _translate("MainWindow", "Current Playlist", None))
         self.playlistTab.setTabText(self.playlistTab.indexOf(self.playlistsearch), _translate("MainWindow", "Playlists", None))
+        self.newPlaylistLineEdit.setPlaceholderText(_translate("MainWindow", "Please Insert a title", None))
         item = self.newPlaylistWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "path(hidden)", None))
         item = self.newPlaylistWidget.horizontalHeaderItem(1)
@@ -639,7 +656,6 @@ class Ui_MainWindow(object):
         self.actionBeenden.setText(_translate("MainWindow", "Exit", None))
         self.actionInfo.setText(_translate("MainWindow", "Info", None))
 
-from myDropTable import MyDropTable
 from myProgressbar import MyProgressbar
 import resource_rc
 

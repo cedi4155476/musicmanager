@@ -43,11 +43,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.player= pyglet.media.Player()
         self.c.execute('SELECT volume FROM volume')
         self.volume = self.c.fetchone()['volume']
+        self.playlistWidget.setAcceptDrops(True)
+        self.newPlaylistWidget.setAcceptDrops(True)
         self.tableWidget.hideColumn(0)
         self.playlistWidget.hideColumn(0)
         self.newPlaylistWidget.hideColumn(0)
-        self.newPlaylistWidget.drop.connect(self.drop)
-        self.playlistWidget.drop.connect(self.drop)
+        self.newPlaylistWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
+        self.playlistWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
+        self.newPlaylistWidget.setColumnWidth(2, 70)
+        self.playlistWidget.setColumnWidth(2, 70)
+        self.playlistWidget.installEventFilter(self)
+        self.newPlaylistWidget.installEventFilter(self)
         self.dlg = SearchDialog()
         ret = self.dlg.exec_()
         if ret == QDialog.Accepted:
@@ -624,24 +630,48 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if hasattr(self, 'ointerpreter'):
                 self.interpreterIsNeeded(self.ointerpreter)
                 
-    def playlist_exists(self):
-        self.c.execute('SELECT path FROM playlist')
-        empty = self.c.fetchone()
-        if empty:
-            return True
-        else:
-            return False
-            
+    def delete_newPlaylist(self):
+        self.playlistWidget.setRowCount(0)
+        rows = self.newPlaylistWidget.rowCount()
+        columns = self.newPlaylistWidget.columnCount()
+        for row in range(rows):
+            self.playlistWidget.insertRow(row)
+            for column in range(columns):
+                item =self.newPlaylistWidget.takeItem(row, column)
+                self.playlistWidget.setItem(row, column, item)
+        self.playlistWidget.sortItems(1)
+        self.currentPlaylistLabel.setText(self.newPlaylistLineEdit.text())
+        self.newPlaylistLineEdit.setText("")
+        self.playlistTab.setCurrentIndex(0)
+        
     def create_playlist(self):
-        newplaylist = []
-#        for row in len(self.newPlaylistWidget.getColumnCount)
         playlist = ET.Element("playlist")
-        for path in newplaylist:
+        ET.SubElement(playlist, "name",  name="playlistname").text = unicode(self.newPlaylistLineEdit.text())
+        for i in range(self.newPlaylistWidget.rowCount()):
+            path = unicode(self.newPlaylistWidget.item(i, 0).text())
             song = ET.SubElement(playlist,  "song")
-            ET.SubElement(song, "field1", name="played").text = 0
-            ET.SubElement(song, "field2", name="path").text = path
+            ET.SubElement(song, "field1", name="path").text = path
+            ET.SubElement(song, "field2", name="played").text = '0'
         tree = ET.ElementTree(playlist)
-        tree.write("playlists/test.xml")
+        playlistname = "playlists/" + unicode(self.newPlaylistLineEdit.text()) + ".xml"
+      
+        if not self.newPlaylistLineEdit.text():
+            errorBox = QMessageBox(0, "No Playlist Name", "Please insert a name for the playlist!")
+            errorBox.exec_()
+            
+        elif self.newPlaylistWidget.rowCount() == 0:
+            errorBox = QMessageBox(0, "No Songs Selected", "Please Drag and Drop some songs in the Playlist!")
+            errorBox.exec_()
+            
+        elif not os.path.isfile(playlistname):
+            tree.write(playlistname)
+            self.delete_newPlaylist()
+            
+        else:
+            errorBox = QMessageBox(0, "Playlist Exists", "The playlist you tried to create already exists!")
+            errorBox.exec_()
+        
+        
         
         
                 
@@ -944,12 +974,51 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
             
+    def eventFilter(self, source, e):
+        print e.type()
+        if source == self.playlistWidget or source == self.newPlaylistWidget:
+            if e.type() == QEvent.KeyPress:
+                if e.key() == Qt.Key_Delete:
+                    if source.selectedItems():
+                        rows = []
+                        for i in source.selectedIndexes():
+                            rows.append(i.row())
+                        rows = list(set(rows))
+                        
+                        for row in reversed(rows):
+                            source.removeRow(row)
+            elif e.type() == QEvent.Enter:
+                pass
+                    
+        return False
     
-    def drop(self, item):
-        print "hi"
-        
-    def drag(self, drag):
-        print drag.mimeData()
+    def drop(self, table, rows):
+        rows = list(set(rows))
+        for row in rows:
+            exist = False
+            path = unicode(self.tableWidget.item(row, 0).text())
+            
+            for i in range(table.rowCount()):
+                if unicode(table.item(i, 0).text()) == path:
+                    exist = True
+            
+            if not exist:
+                song = self.get_objectItems(path)
+            
+                length = song['length']
+                m, s = divmod(length, 60)
+                length = ('%02d:%02d' % (m, s))
+            
+                qpath = QTableWidgetItem(song['path'])
+                qtitle = QTableWidgetItem(song['title'])
+                qlength = QTableWidgetItem(length)
+                qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
+                row = table.rowCount()
+                table.insertRow(row)
+                table.setItem(row, 0, qpath)
+                table.setItem(row, 1, qtitle)
+                table.setItem(row, 2, qlength)
+        table.sortItems(1)
     
     @pyqtSignature("")
     def on_playlistSaveButton_clicked(self):
@@ -965,3 +1034,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Slot documentation goes here.
         """
         self.create_playlist()
+        
+    @pyqtSignature("QTableWidgetItem*")
+    def on_playlistWidget_itemDoubleClicked(self, item):
+        """
+        Slot documentation goes here.
+        """
+        # TODO: not implemented yet
+        raise NotImplementedError
