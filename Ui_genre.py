@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/genre.ui'
 #
-# Created: Wed May 27 11:18:03 2015
+# Created: Wed Jul  1 11:27:57 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -50,6 +50,7 @@ class Ui_genre(object):
         self.comboboxdel.setObjectName(_fromUtf8("comboboxdel"))
         self.gridLayout_2.addWidget(self.comboboxdel, 0, 0, 1, 1)
         self.buttondel = QtGui.QPushButton(genre)
+        self.buttondel.setAutoDefault(False)
         self.buttondel.setObjectName(_fromUtf8("buttondel"))
         self.gridLayout_2.addWidget(self.buttondel, 0, 1, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_2)
@@ -64,6 +65,7 @@ class Ui_genre(object):
         self.gridLayout.addWidget(self.buttonadd, 0, 1, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout)
         self.buttonfinish = QtGui.QPushButton(genre)
+        self.buttonfinish.setAutoDefault(False)
         self.buttonfinish.setObjectName(_fromUtf8("buttonfinish"))
         self.verticalLayout.addWidget(self.buttonfinish)
         self.verticalLayout_2.addLayout(self.verticalLayout)

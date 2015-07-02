@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/info.ui'
 #
-# Created: Fri Jun  5 15:10:53 2015
+# Created: Thu Jul  2 16:19:55 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -58,16 +58,15 @@ class Ui_Info(object):
         self.verticalLayout.addWidget(self.buttonBox)
 
         self.retranslateUi(Info)
-        QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("accepted()")), Info.accept)
         QtCore.QObject.connect(self.buttonBox, QtCore.SIGNAL(_fromUtf8("rejected()")), Info.reject)
         QtCore.QMetaObject.connectSlotsByName(Info)
 
     def retranslateUi(self, Info):
         Info.setWindowTitle(_translate("Info", "Info", None))
-        self.label.setText(_translate("Info", "Musik Manager (Temporär)", None))
+        self.label.setText(_translate("Info", "Musik Manager (Temporary)", None))
         self.label_2.setText(_translate("Info", "Author: Cédric Christen", None))
         self.label_3.setText(_translate("Info", "Version: 0.1", None))
-        self.label_4.setText(_translate("Info", "Mit Musik Manager kann man seine Musik Datenbank verwalten und auch diese mit verschiedenen Abspielmoden anhören", None))
+        self.label_4.setText(_translate("Info", "Manage your music files with Music Manager and also use the music player to hear your songs from playlists with different types of randomness.", None))
 
 
 if __name__ == "__main__":

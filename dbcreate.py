@@ -4,6 +4,9 @@ conn = sqlite3.connect('music.db')
 c = conn.cursor()
 
 for line in open('dbcreate.sql'):
-    c.execute(line)
+    try:
+        c.execute(line)
+    except sqlite3.OperationalError:
+        break
 
 conn.close()

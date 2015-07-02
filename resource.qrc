@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="music_layout">
+    <file>resources/next.png</file>
+    <file>resources/pause.png</file>
+    <file>resources/play.png</file>
+    <file>resources/previous.png</file>
+  </qresource>
+</RCC>

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Module implementing genre.
 """
@@ -22,9 +21,13 @@ class Genre(QDialog, Ui_genre):
         self.c = c
         self.conn = conn
         self.path = path
+        self.comboboxadd.lineEdit().returnPressed.connect(self.comboboxAddReturnPressed)
         self.get_songAllGenres()
         self.get_allGenres()
         self.set_list()
+        
+    def comboboxAddReturnPressed(self):
+        self.on_buttonadd_clicked()
     
     def get_allGenres(self):
         """
@@ -128,6 +131,7 @@ class Genre(QDialog, Ui_genre):
             if not self.genreExists(currentText):
                 genreadd = (None, currentText)
                 self.c.execute('''INSERT INTO genre VALUES (?,?) ''',  genreadd)
+                self.conn.commit()
                 
             if self.comboboxdel.findText(currentText) < 0:
                 self.c.execute('SELECT genre_ID from genre WHERE genre_name = ?', (currentText, ))

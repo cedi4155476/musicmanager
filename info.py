@@ -23,5 +23,5 @@ class Info(QDialog, Ui_Info):
     
         QDialog.__init__(self, parent)
         self.setupUi(self)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowCloseButtonHint)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         
