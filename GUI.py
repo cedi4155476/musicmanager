@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import pdb
+import time
 """
 Module implementing MainWindow.
 """
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.conn = sqlite3.connect('music.db')
         self.conn.row_factory = self.dict_factory
         self.c = self.conn.cursor()
+        self.db_create()
         self.setupUi(self)
         self.musicframe.setVisible(False)
         self.player= pyglet.media.Player()
@@ -46,6 +48,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistWidget.hideColumn(0)
         self.playlistWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
         self.playlistWidget.setColumnWidth(2, 70)
+        self.createSystemTray()
         self.playlistWidget.installEventFilter(self)
         self.tableWidget.installEventFilter(self)
         self.playlistTreeView.installEventFilter(self)
@@ -55,6 +58,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistWidget.playlistInfo.connect(self.playlistAdd)
         self.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
         self.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.playlistSearchEnterPressed)
+        self.timebar.releasePlay.connect(self.releasePlay)
+        self.timebar.progressMovement.connect(self.progressMovement)
         self.mdlg = MusicPlayer()
         self.musicplayersetslots()
         self.dlg = SearchDialog()
@@ -66,11 +71,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.songs = {}
             self.playlist = {}
             self.info = []
+            self.RANDOMNESS = False
             self.loadErrors = []
             self.make_Table()
             self.create_tree()
         else:
             QApplication.quit()
+            
+    def db_create(self):
+        try:
+            self.c.execute('SELECT path FROM music')
+        except:
+            for line in open('dbcreate.sql'):
+                try:
+                    self.c.execute(line)
+                except sqlite3.OperationalError:
+                    break
             
     def musicplayersetslots(self):
         self.mdlg.playclicked.connect(self.mpplayclicked)
@@ -83,6 +99,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.mdlg.release.connect(self.mprelease)
         self.mdlg.playerhidden.connect(self.playerClosed)
         
+    def createSystemTray(self):
+        self.trayicon = QSystemTrayIcon(self)
+        self.trayicon.setToolTip("Music Manager")
+        self.traymenu = QMenu(self)
+        self.traymenu.addAction("Open", self.openWindow)
+        self.traymenu.addAction("Exit", self.exitWindow)
+        self.trayicon.setContextMenu(self.traymenu)
+        self.trayicon.setIcon(QIcon('resources/trayicon.png'))
+        self.trayicon.activated.connect(self.trayactivated)
+        self.doubleclicktimer = QTimer()
+        self.doubleclicktimer.setSingleShot(True)
+        self.doubleclicktimer.timeout.connect(self.waitForDoubleclick)
+        self.trayicon.show()
+
     def reset_all(self):
         self.musicframe.setVisible(False)
         self.player= pyglet.media.Player()
@@ -498,7 +528,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
       
         interpreter_ID = self.c.fetchone()
       
-        inserts = (path, title, album, interpreter_ID["interpreter_ID"], comment, 0, length, 100, 0, 10)
+        inserts = (path, title, album, interpreter_ID["interpreter_ID"], comment, 0, length, 0.5, 0, 10)
         self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?)', inserts)
     
     def fileAddInDB(self, paths, playlist):
@@ -713,10 +743,64 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ex = [song['title'], song['album'], interpreter_ID['interpreter_ID'], song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
             self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
         self.conn.commit()
-    
+        
+    def get_playlistItemWithPath(self, path):
+        for i in range(self.playlistWidget.rowCount()):
+            if path == self.playlistWidget.item(i, 0).text():
+                return self.playlistWidget.item(i, 0)
+                
+    def playerPlayNext(self):
+            time.sleep(0.2)
+            self.player.next()
+
+    def start_randomplay(self):
+        if not self.playlist:
+            return
+        if not self.musicframe.isVisible():
+            self.musicframe.setVisible(True)
+        alreadystarted =False
+        self.RANDOMNESS = True
+        self.count = len(self.playlist)
+        self.randomcount = 0
+        self.songlist = []
+        self.index = 0
+        self.paus = 0
+        self.playing = False
+        self.single = False
+        self.loop = QTimer()
+        self.loop.timeout.connect(self.timeout)
+        self.loop.start(100)
+        self.START = 0.000001
+        if self.player.source:
+            alreadystarted = True
+        self.get_nextRandomSong()
+        if alreadystarted:
+            self.playerPlayNext()
+        self.player.play()
+        self.c.execute('SELECT volume FROM volume')
+        self.volume = self.c.fetchone()['volume']
+        self.player.volume = self.volume
+        self.soundSlider.setValue(self.volume)
+        self.soundSlider.setSliderPosition(self.volume)
+        
+    def increase_chance(self):
+        for path in self.playlist:
+            if path != self.song.get_path():
+                self.playlist[path].increasechance(self.count)
+        
+    def decrease_chance(self):
+        self.playlist[self.song.get_path()].decreasechance(self.count)
+        
+    def get_randomcount(self):
+        for path in self.playlist:
+            self.randomcount += self.playlist[path].get_chance()
+
     def timeout(self):
         if self.paus < 5:
             self.paus += 1
+    #TODO: Play Icon and pause Icon
+#        if self.player.playing and not self.playset:
+#            self.trayicon.setIcon('path')
         if self.player.playing and not self.single:
             self.update_progress()
             self.mdlg.update_progress(self.player.time)
@@ -724,6 +808,49 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.playlist[self.Ppath].update_timesplayed()
                 self.player.seek(self.START)
                 self.on_nextbutton_clicked()
+                
+    def get_nextRandomSong(self):
+        self.get_randomcount()
+        randomnumber = random.randrange(int(self.randomcount*1000000))
+        chance = 0
+        for path in self.playlist:
+            chance += int(self.playlist[path].get_chance()*1000000)
+            if chance >= randomnumber:
+                songpath = os.path.abspath(path)
+                break
+                
+        self.randomcount = 0
+        if not 'songpath' in locals():
+            self.get_nextRandomSong()
+            return
+        self.song = self.playlist[songpath]
+        self.songlist.append(self.song)
+        self.index = len(self.songlist) - 1
+        if os.path.isfile(songpath):
+            self.Ppath = songpath
+            source= pyglet.media.load(songpath)
+        self.player.queue(source)
+        self.decrease_chance()
+        self.increase_chance()
+        
+        self.get_infos()
+        
+    def get_next(self):
+        self.song = self.songlist[self.index]
+        path = os.path.abspath(self.song.get_path())
+        
+        source= pyglet.media.load(path)
+        self.player.queue(source)
+        self.get_infos()
+        
+    def get_last(self):
+        self.song = self.songlist[self.index]
+        path = os.path.abspath(self.song.get_path())
+        
+        source= pyglet.resource.media(path)
+        self.player.queue(source)
+        
+        self.get_infos()
 
     def get_nextsong(self):
         self.update_db(self.playlist, self.Ppath)
@@ -734,10 +861,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.Ppath = path
             source= pyglet.media.load(path)
             self.player.queue(source)
+            self.song = self.playlist[self.Ppath].get_all()
             self.get_songinformation()
+            
+    def get_infos(self):
+        item = self.get_playlistItemWithPath(self.song.get_path())
+        self.playlistWidget.setCurrentItem(item)
+        song = self.song.get_all()
+        self.maxlength = song['length']
+        self.timebar.setRange(0, self.maxlength*50)
+        m, s = divmod(self.maxlength, 60)
+        self.length.setText("/ %02d:%02d" % (m, s))
+        self.timebar.setValue(0)
+        self.time.setText("%02d:%02d" % (0, 0))
+        length = "/ %02d:%02d" % (m, s)
+        range = self.maxlength*50
+        self.send_songInfos(length, range)
+        self.player.seek(self.START)
         
     def get_songinformation(self):
-        self.song = self.playlist[self.Ppath].get_all()
         self.maxlength = self.song['length']
         self.timebar.setRange(0, self.maxlength*50)
         m, s = divmod(self.maxlength, 60)
@@ -769,15 +911,41 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.player.seek(percent * self.maxlength)
         self.update_progress()
         
-    def closeEvent(self, event):
-        if hasattr(self, 'player'):
-            self.player.pause()
-            self.c.execute('UPDATE volume SET volume=? WHERE volume_ID=1', (unicode(self.player.volume), ))
-            self.conn.commit()
-            self.update_dball(self.playlist)
-        event.accept()
+    def trayactivated(self, type):
+        if type == 2:
+            self.doubleclicktimer.stop()
+            self.showNormal()
+        elif type == QSystemTrayIcon.Trigger:
+            self.doubleclicktimer.start(200)
+                
+    def waitForDoubleclick(self):
+        self.traymenu.popup(QCursor.pos())
         
+    def openWindow(self):
+        self.showNormal()
+        
+    def exitWindow(self):
+        self.player.pause()
+        QApplication.quit()
+        
+    def closeEvent(self, event):
+        if self.mdlg.isVisible() or self.musicdock.isVisible():
+            self.hide()
+        else:
+            if hasattr(self, 'player'):
+                self.player.pause()
+                self.c.execute('UPDATE volume SET volume=? WHERE volume_ID=1', (unicode(self.player.volume), ))
+                self.conn.commit()
+                self.update_dball(self.playlist)
+            QApplication.quit()
+            event.accept()
+        event.ignore()
+
     def playCurrentSong(self):
+        if self.RANDOMNESS:
+            self.musicframe.setVisible(False)
+            self.player = pyglet.media.Player()
+            self.RANDOMNESS = False
         if not self.playlist:
             return
         self.playlistTab.setCurrentIndex(1)
@@ -791,8 +959,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.loop.timeout.connect(self.timeout)
             self.loop.start(100)
             self.START = 0.000001
-            self.timebar.releasePlay.connect(self.releasePlay)
-            self.timebar.progressMovement.connect(self.progressMovement)
             self.Ppath = unicode(self.playlistWidget.item(self.index,  0).text())
             self.get_nextsong()
             self.player.play()
@@ -806,7 +972,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.single = True
             self.index = self.playlistWidget.currentRow()
             self.get_nextsong()
-            self.player.next()
+            self.playerPlayNext()
             self.single = False
             self.player.play()
 
@@ -983,11 +1149,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlist = {}
         for path in self.songs:
             self.playlistAdd(path, False)
-        for i in range(self.playlistWidget.rowCount()):
-            if self.Spath == self.playlistWidget.item(i, 0).text():
-                self.playlistWidget.setCurrentItem(self.playlistWidget.item(i, 0))
-                self.playlistWidget.setFocus()
-                self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
+        item = self.get_playlistItemWithPath(self.Spath)
+        self.playlistWidget.setCurrentItem(item)
+        self.playlistWidget.setFocus()
+        self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
 
     def playlistAdd(self, path, sort):
         existinplaylist = False
@@ -1025,10 +1190,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def listViewClose(self):
         self.playlistSearchLineEdit.hidePopup()
-        
+
     def tableWidgetReturnPressed(self):
         self.on_tableWidget_itemDoubleClicked(self.tableWidget.currentItem())
-        
+
     def playlistTreeContextMenu(self, pos):
         index = self.playlistTreeView.indexAt(pos)
         if index.isValid():
@@ -1110,6 +1275,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.playlistWidget.setFocus()
                 self.setCurrentCell(0, 1)
             self.playCurrentSong()
+            
+    @pyqtSignature("")
+    def on_playbutton_clicked(self):
+        self.start_randomplay()
 
     @pyqtSignature("")
     def on_playbutton_2_clicked(self):
@@ -1138,8 +1307,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.index > 0:
                 self.single = True
                 self.index -= 1
-                self.get_nextsong()
-                self.player.next()
+                if self.RANDOMNESS:
+                    self.get_last()
+                else:
+                    self.get_nextsong()
+                self.playerPlayNext()
                 self.single = False
         else:
             self.player.seek(self.START)
@@ -1152,13 +1324,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.paus == 5:
             self.paus = 0
             self.single = True
-            if self.index == len(self.songs) -1:
-                self.index = 0
-                self.get_nextsong()
+            if self.RANDOMNESS:
+                if self.index == len(self.songlist) -1:
+                    self.get_nextRandomSong()
+                else:
+                    self.index += 1
+                    self.get_next()
             else:
-                self.index += 1
-                self.get_nextsong()
-            self.player.next()
+                if self.index == len(self.playlist) -1:
+                    self.index = 0
+                    self.get_nextsong()
+                else:
+                    self.index += 1
+                    self.get_nextsong()
+            self.playerPlayNext()
             self.single = False
 
     @pyqtSignature("int")
@@ -1193,7 +1372,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.make_Table()
 
         elif action.text() == "Exit":
-            self.close()
+            QApplication.quit()
 
         elif action.text() == "Edit":
             self.editSong()
@@ -1213,22 +1392,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def eventFilter(self, source, e):
         if source == self.playlistWidget:
             if e.type() == QEvent.KeyPress:
-                if e.key() == Qt.Key_Delete:
+                if e.key() == Qt.Key_Return:
+                    self.playCurrentSong()
+                    self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
+                elif e.key() == Qt.Key_Delete:
                     if source.selectedItems():
                         rows = []
                         for i in source.selectedIndexes():
                             rows.append(i.row())
                         rows = list(set(rows))
-                        
+
                         for row in reversed(rows):
                             source.removeRow(row)
-                
-        if source == self.playlistWidget:
-            if e.type() == QEvent.KeyPress:
-                if e.key() == Qt.Key_Return:
-                    self.playCurrentSong()
-                    self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
-                    
+
         if source == self.playlistTreeView:
             if e.type() == QEvent.KeyPress:
                 if e.key() == Qt.Key_Delete:
@@ -1239,7 +1415,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.closeMusic()
                 e.ignore()
                 return True
-                    
+
         return False
 
     

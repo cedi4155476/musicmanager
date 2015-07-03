@@ -1,6 +1,6 @@
-from math import ceil,  pow
+from math import sqrt
 class Song(object):
-    def __init__(self, path, title=None, album=None, interpreter=None, comment=None, cs=0, genres={}, length=None, chance=None, timesplayed=0,  rating=10):
+    def __init__(self, path, title=None, album=None, interpreter=None, comment=None, cs=0, genres={}, length=None, chance=500, timesplayed=0,  rating=10):
         self.path = path
         self.title = title
         self.album = album
@@ -25,16 +25,17 @@ class Song(object):
         self.rating = rating
         
     def increasechance(self, count):
-        MAX = count * 100
-        self.chance += int(ceil((1 - self.chance / MAX) / (self.chance / count) * count * self.rating / 10))
-        if self.chance >= MAX:
-            self.chance = int(MAX)
+        count = float(count)
+        count = float(count)
+        self.chance += sqrt(self.chance) / count * (self.rating / 10.0)
+        if self.chance >= 1:
+            self.chance = 1
         
     def decreasechance(self, count):
-        MAX = count * 100
-        self.chance -= int(ceil(pow((self.chance / MAX), (self.chance / MAX)) * self.chance))
+        count = float(count)
+        self.chance -= self.chance * self.chance * count
         if self.chance <= 0:
-            self.chance = 1
+            self.chance = 0.000000001
         
     def update_timesplayed(self):
         self.timesplayed += 1
