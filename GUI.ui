@@ -575,6 +575,9 @@
          <item>
           <widget class="QWidget" name="musicframe" native="true">
            <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="margin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QDockWidget" name="musicdock">
               <property name="floating">
@@ -591,6 +594,9 @@
               </property>
               <widget class="QWidget" name="dockWidgetContents">
                <layout class="QGridLayout" name="gridLayout">
+                <property name="margin">
+                 <number>0</number>
+                </property>
                 <item row="0" column="0">
                  <layout class="QVBoxLayout" name="musiclayout">
                   <item>
@@ -637,7 +643,10 @@
                    </layout>
                   </item>
                   <item>
-                   <layout class="QHBoxLayout" name="horizontalLayout_4">
+                   <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0,0,0,0,0,0">
+                    <property name="spacing">
+                     <number>0</number>
+                    </property>
                     <item>
                      <widget class="QPushButton" name="previousbutton">
                       <property name="sizePolicy">
@@ -665,7 +674,20 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="playbutton_2">
+                     <spacer name="horizontalSpacer">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>77</width>
+                        <height>20</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="playpausebutton">
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                         <horstretch>0</horstretch>
@@ -677,7 +699,9 @@
                       </property>
                       <property name="icon">
                        <iconset resource="resource.qrc">
-                        <normaloff>:/music_layout/resources/play.png</normaloff>:/music_layout/resources/play.png</iconset>
+                        <normaloff>:/music_layout/resources/pause.png</normaloff>
+                        <normalon>:/music_layout/resources/pause.png</normalon>
+                        <activeon>:/music_layout/resources/pause.png</activeon>:/music_layout/resources/pause.png</iconset>
                       </property>
                       <property name="iconSize">
                        <size>
@@ -691,30 +715,17 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="pausebutton">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
+                     <spacer name="horizontalSpacer_2">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
                       </property>
-                      <property name="text">
-                       <string/>
-                      </property>
-                      <property name="icon">
-                       <iconset resource="resource.qrc">
-                        <normaloff>:/music_layout/resources/pause.png</normaloff>:/music_layout/resources/pause.png</iconset>
-                      </property>
-                      <property name="iconSize">
+                      <property name="sizeHint" stdset="0">
                        <size>
-                        <width>30</width>
-                        <height>30</height>
+                        <width>77</width>
+                        <height>20</height>
                        </size>
                       </property>
-                      <property name="flat">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
+                     </spacer>
                     </item>
                     <item>
                      <widget class="QPushButton" name="nextbutton">
@@ -744,6 +755,12 @@
                     </item>
                     <item>
                      <layout class="QVBoxLayout" name="verticalLayout_8">
+                      <property name="sizeConstraint">
+                       <enum>QLayout::SetDefaultConstraint</enum>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
                       <item>
                        <widget class="QLabel" name="volume">
                         <property name="sizePolicy">
@@ -797,7 +814,7 @@
     <item>
      <widget class="QTabWidget" name="playlistTab">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="playlistsearch">
        <attribute name="title">
@@ -869,7 +886,7 @@
       </widget>
       <widget class="QWidget" name="playlistInfo">
        <attribute name="title">
-        <string>Aktive Playlist</string>
+        <string>Active Playlist</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_11">
         <item>

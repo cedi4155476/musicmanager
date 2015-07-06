@@ -2,8 +2,11 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 class MyDropTable(QTableWidget):
+    """
+    add drop functionality to table
+    """
     playlistInfo = pyqtSignal(str, bool)
-    
+
     def __init__(self, parent=None):
         QTableWidget.__init__(self)
         self.setAcceptDrops(True)

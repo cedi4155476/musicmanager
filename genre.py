@@ -10,7 +10,7 @@ from Ui_genre import Ui_genre
 
 class Genre(QDialog, Ui_genre):
     """
-    Genre-Bearbeitung wird hier geregelt und auch per Dialog übersichtlich gestaltet.
+    handle genre editing with dialog
     """
     def __init__(self, c, conn, path, parent = None):
         """
@@ -25,48 +25,51 @@ class Genre(QDialog, Ui_genre):
         self.get_songAllGenres()
         self.get_allGenres()
         self.set_list()
-        
+
     def comboboxAddReturnPressed(self):
+        """
+        add genre if return is pressed in text field
+        """
         self.on_buttonadd_clicked()
-    
+
     def get_allGenres(self):
         """
-        Übergibt alle Genres von allen Liedern.
+        search all genres existing in db
         """
         self.c.execute('SELECT genre_name as genre FROM genre')
         self.genres = self.c.fetchall()
-    
+
     def get_songAllGenres(self):
         """
-        Übergibt alle Genres des momentan ausgewählten Songes.
+        get all genres of editing song
         """
         self.c.execute('''SELECT genre.genre_name as genre, genre.genre_ID as ID FROM genre 
                                                 JOIN music_genre 
                                                     ON genre.genre_ID = music_genre.genre_ID 
                                                     WHERE music_genre.music_path = ?''', (self.path, ))
         self.Sgenres = self.c.fetchall()
-    
+
     def set_list(self):
         """
-        Erstellt die Listen, welche in den Comboboxes zu finden sind.
+        create lists for the comboboxes
         """
         genres_name = QStringList()
         Sgenres_name = QStringList()
-        
+
         for genre in self.Sgenres:
             if genre['genre'] != "empty":
                 Sgenres_name.append(QString(genre['genre']))
         self.comboboxdel.addItems(Sgenres_name)
-    
+
         for genre in self.genres:
             if not Sgenres_name.contains(QString(genre['genre'])):
                 if genre['genre'] != "empty":
                     genres_name.append(QString(genre['genre']))
         self.comboboxadd.addItems(genres_name)
-        
+
     def genreExists(self, genre):
         """
-        Überprüft ob Genre bereits existiert.
+        checks if genre already exists
         """
         self.c.execute('SELECT genre_ID FROM genre WHERE genre_name = ?',  (genre, ))
         exist = self.c.fetchone()
@@ -74,21 +77,21 @@ class Genre(QDialog, Ui_genre):
             return True
         else:
             return False
-    
+
     def genreIsNeeded(self, genre):
         """
-        Überprüft ob Genre gebraucht wird.
+        checks if genre is needed
         """
         self.c.execute('SELECT * FROM genre JOIN music_genre ON music_genre.genre_ID = genre.genre_ID WHERE genre.genre_name = ?', (genre, ))
         if self.c.fetchone():
             return True
         else:
             return False
-    
+
     @pyqtSignature("")
     def on_buttondel_clicked(self):
         """
-        Genre wird vom Song entfernt und wenn es nicht mehr gebraucht wird, komplett gelöscht.
+        genre is removed from song and if not needed, deleted
         """
         if self.comboboxdel.currentText():
             currentText = unicode(self.comboboxdel.currentText())
@@ -97,7 +100,7 @@ class Genre(QDialog, Ui_genre):
             delete = (self.path, delgenreID)
             self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
             self.conn.commit()
-            
+
             if not self.genreIsNeeded(currentText):
                 self.c.execute('DELETE FROM genre WHERE genre_name = ?', (currentText, ))
                 self.conn.commit()
@@ -105,18 +108,18 @@ class Genre(QDialog, Ui_genre):
             else:
                 self.comboboxadd.addItem(QString(currentText))
                 self.comboboxdel.removeItem(self.comboboxdel.currentIndex())
-                
+
             if not self.comboboxdel.currentText():
                 self.c.execute('''SELECT genre_ID from genre WHERE genre_name = "empty" ''')
                 genre_ID = self.c.fetchone()['genre_ID']
                 inserts = (self.path, genre_ID)
                 self.c.execute('INSERT INTO music_genre VALUES(?,?)', inserts)
                 self.conn.commit()
-    
+
     @pyqtSignature("")
     def on_buttonadd_clicked(self):
         """
-        Genre wird dem Song hinzugefügt und falls es noch nixht existierte, erstellt.
+        genre added to song and if not exists, created
         """
         if self.comboboxadd.currentText():
             if not self.comboboxdel.currentText():
@@ -125,14 +128,13 @@ class Genre(QDialog, Ui_genre):
                 delete = (self.path, delgenreID)
                 self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
                 self.conn.commit()
-                
-                
+
             currentText = unicode(self.comboboxadd.currentText())
             if not self.genreExists(currentText):
                 genreadd = (None, currentText)
                 self.c.execute('''INSERT INTO genre VALUES (?,?) ''',  genreadd)
                 self.conn.commit()
-                
+
             if self.comboboxdel.findText(currentText) < 0:
                 self.c.execute('SELECT genre_ID from genre WHERE genre_name = ?', (currentText, ))
                 genre_ID = self.c.fetchone()['genre_ID']
@@ -142,10 +144,10 @@ class Genre(QDialog, Ui_genre):
                 self.comboboxdel.addItem(currentText)
                 self.comboboxadd.clearEditText()
                 self.comboboxadd.removeItem(self.comboboxadd.currentIndex())
-    
+
     @pyqtSignature("")
     def on_buttonfinish_clicked(self):
         """
-        Schliesst den Dialog.
+        close dialog
         """
         self.close()

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/load.ui'
 #
-# Created: Fri Jun  5 17:19:33 2015
+# Created: Mon Jul  6 15:10:44 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -38,7 +38,7 @@ class Ui_Load(object):
         QtCore.QMetaObject.connectSlotsByName(Load)
 
     def retranslateUi(self, Load):
-        Load.setWindowTitle(_translate("Load", "Load Data", None))
+        Load.setWindowTitle(_translate("Load", "Load Songs", None))
 
 
 if __name__ == "__main__":

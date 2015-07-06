@@ -32,7 +32,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Genres einfügen</string>
+   <string>Genres manager</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -52,7 +52,7 @@
        <item row="0" column="1">
         <widget class="QPushButton" name="buttondel">
          <property name="text">
-          <string>Löschen</string>
+          <string>Delete</string>
          </property>
          <property name="autoDefault">
           <bool>false</bool>
@@ -73,7 +73,7 @@
        <item row="0" column="1">
         <widget class="QPushButton" name="buttonadd">
          <property name="text">
-          <string>Hinzufügen</string>
+          <string>Add</string>
          </property>
         </widget>
        </item>
@@ -82,7 +82,7 @@
      <item>
       <widget class="QPushButton" name="buttonfinish">
        <property name="text">
-        <string>fertig</string>
+        <string>finish</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/info.ui'
 #
-# Created: Thu Jul  2 16:19:55 2015
+# Created: Mon Jul  6 15:10:44 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -63,9 +63,9 @@ class Ui_Info(object):
 
     def retranslateUi(self, Info):
         Info.setWindowTitle(_translate("Info", "Info", None))
-        self.label.setText(_translate("Info", "Musik Manager (Temporary)", None))
+        self.label.setText(_translate("Info", "Music Manager", None))
         self.label_2.setText(_translate("Info", "Author: Cédric Christen", None))
-        self.label_3.setText(_translate("Info", "Version: 0.1", None))
+        self.label_3.setText(_translate("Info", "Version: 0.1a1", None))
         self.label_4.setText(_translate("Info", "Manage your music files with Music Manager and also use the music player to hear your songs from playlists with different types of randomness.", None))
 
 

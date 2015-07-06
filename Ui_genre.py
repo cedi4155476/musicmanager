@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/genre.ui'
 #
-# Created: Wed Jul  1 11:27:57 2015
+# Created: Mon Jul  6 15:10:43 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -74,10 +74,10 @@ class Ui_genre(object):
         QtCore.QMetaObject.connectSlotsByName(genre)
 
     def retranslateUi(self, genre):
-        genre.setWindowTitle(_translate("genre", "Genres einfügen", None))
-        self.buttondel.setText(_translate("genre", "Löschen", None))
-        self.buttonadd.setText(_translate("genre", "Hinzufügen", None))
-        self.buttonfinish.setText(_translate("genre", "fertig", None))
+        genre.setWindowTitle(_translate("genre", "Genres manager", None))
+        self.buttondel.setText(_translate("genre", "Delete", None))
+        self.buttonadd.setText(_translate("genre", "Add", None))
+        self.buttonfinish.setText(_translate("genre", "finish", None))
 
 
 if __name__ == "__main__":

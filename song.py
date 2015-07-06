@@ -1,5 +1,8 @@
 from math import sqrt
 class Song(object):
+    """
+    holds all song object for the programm
+    """
     def __init__(self, path, title=None, album=None, interpreter=None, comment=None, cs=0, genres={}, length=None, chance=500, timesplayed=0,  rating=10):
         self.path = path
         self.title = title

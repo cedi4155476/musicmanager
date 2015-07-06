@@ -1,22 +1,12 @@
 # -*- coding: utf-8 -*-
-import pdb
-import time
 """
 Module implementing MainWindow.
 """
-import pyglet
-import magic
-import sqlite3
-import mutagen
-import os.path
-import shutil
-import random
-from mutagen.easyid3 import *
-from mutagen.mp3 import MP3
+import pyglet, magic, sqlite3, mutagen, os.path, shutil, random, time
 import xml.etree.cElementTree as ET
-
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+
 from search import SearchDialog
 from genre import Genre
 from song import Song
@@ -35,31 +25,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Constructor
         """
         QMainWindow.__init__(self,  parent)
-        
+
     def start(self):
-        self.conn = sqlite3.connect('music.db')
-        self.conn.row_factory = self.dict_factory
-        self.c = self.conn.cursor()
-        self.db_create()
+        """
+        the constructor replacement so it does not crash
+        """
+        self.db_connect()
         self.setupUi(self)
-        self.musicframe.setVisible(False)
-        self.player= pyglet.media.Player()
-        self.tableWidget.hideColumn(0)
-        self.playlistWidget.hideColumn(0)
-        self.playlistWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
-        self.playlistWidget.setColumnWidth(2, 70)
+        self.adjust_gui()
         self.createSystemTray()
-        self.playlistWidget.installEventFilter(self)
-        self.tableWidget.installEventFilter(self)
-        self.playlistTreeView.installEventFilter(self)
-        self.musicdock.installEventFilter(self)
-        self.playlistSearchLineEdit.setView(MyListView())
-        self.playlistSearchLineEdit.view().listviewclose.connect(self.listViewClose)
-        self.playlistWidget.playlistInfo.connect(self.playlistAdd)
-        self.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
-        self.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.playlistSearchEnterPressed)
-        self.timebar.releasePlay.connect(self.releasePlay)
-        self.timebar.progressMovement.connect(self.progressMovement)
+        self.installEventFilter()
         self.mdlg = MusicPlayer()
         self.musicplayersetslots()
         self.dlg = SearchDialog()
@@ -67,6 +42,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if ret == QDialog.Accepted:
             self.currentDir = self.dlg.get_currentdir()
             self.files = self.dlg.get_files()
+            self.player= pyglet.media.Player()
             self.checkboxes = []
             self.songs = {}
             self.playlist = {}
@@ -77,8 +53,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.create_tree()
         else:
             QApplication.quit()
-            
-    def db_create(self):
+
+    def db_connect(self):
+        """
+        connect to the db and if it did not exist make the db and it's tables
+        """
+        self.conn = sqlite3.connect('music.db')
+        self.conn.row_factory = self.dict_factory
+        self.c = self.conn.cursor()
         try:
             self.c.execute('SELECT path FROM music')
         except:
@@ -87,8 +69,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.c.execute(line)
                 except sqlite3.OperationalError:
                     break
-            
+
+    def adjust_gui(self):
+        """
+        adjust the gui
+        """
+        self.musicframe.setVisible(False)
+        self.tableWidget.hideColumn(0)
+        self.playlistWidget.hideColumn(0)
+        self.playlistWidget.horizontalHeader().setResizeMode(1, QHeaderView.Stretch)
+        self.playlistWidget.setColumnWidth(2, 70)
+        self.playlistSearchLineEdit.setView(MyListView())
+
+    def installEventFilter(self):
+        """
+        install the Event Filters
+        """
+        self.playlistWidget.installEventFilter(self)
+        self.tableWidget.installEventFilter(self)
+        self.playlistTreeView.installEventFilter(self)
+        self.musicdock.installEventFilter(self)
+
+    def make_connections(self):
+        """
+        create the connects
+        """
+        self.playlistSearchLineEdit.view().listviewclose.connect(self.listViewClose)
+        self.playlistWidget.playlistInfo.connect(self.playlistAdd)
+        self.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
+        self.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.playlistSearchEnterPressed)
+        self.timebar.releasePlay.connect(self.releasePlay)
+        self.timebar.progressMovement.connect(self.progressMovement)
+
     def musicplayersetslots(self):
+        """
+        connect the slots with the musicplayer class
+        """
         self.mdlg.playclicked.connect(self.mpplayclicked)
         self.mdlg.pauseclicked.connect(self.mppauseclicked)
         self.mdlg.nextclicked.connect(self.mpnextclicked)
@@ -98,8 +114,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.mdlg.timechanged.connect(self.mptimechanged)
         self.mdlg.release.connect(self.mprelease)
         self.mdlg.playerhidden.connect(self.playerClosed)
-        
+
     def createSystemTray(self):
+        """
+        make the system tray icon and what is needed
+        """
         self.trayicon = QSystemTrayIcon(self)
         self.trayicon.setToolTip("Music Manager")
         self.traymenu = QMenu(self)
@@ -114,6 +133,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.trayicon.show()
 
     def reset_all(self):
+        """
+        set the programm back to start
+        """
         self.musicframe.setVisible(False)
         self.player= pyglet.media.Player()
         self.mdlg = MusicPlayer()
@@ -123,21 +145,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def dict_factory(self, cursor, row):
         """
-        Für vereinfachte abfrage der SQL Ergebnisse.
+        make it easier to read from db
         """
         d = {}
         for idx, col in enumerate(cursor.description):
             d[col[0]] = row[idx]
         return d
-        
+
     def editSong(self):
+        """
+        more edit varieties
+        """
         #TODO: Add detailed Edit Dialog
         if hasattr(self, 'Spath'):
             pass
 
     def get_dbData(self, path):
         """
-        Erstellt die Objekte für den gegebenen Pfad, welche einfach aufrufbar sind.
+        get all infos from database for defined path
         """
         self.c.execute('''SELECT music.title as title, music.album as album, music.comment as comment, music.cs as cs,  genre.genre_name as genre, interpreter.interpreter_name as interpreter, music.length as length, music.chance as chance, music.times_played as timesplayed, music.rating as rating
                                     FROM music 
@@ -159,9 +184,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 genre.append(d['genre'])
             i +=1
         return data, genre
-        
-        
+
     def create_object(self, path, data, genre, playlist):
+        """
+        create object for playlist or for editing in table
+        """
         if playlist:
             self.playlist.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating']))
         else:
@@ -169,11 +196,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def get_objectItems(self, object, path):
         """
-        Vereinfachte Funktion um alles in einem Objekt zu erhalten.
+        get everything for an object easier
         """
         return object[path].get_all()
-        
+
     def get_fileGenres(self):
+        """
+        get the genres of the directory
+        """
         self.fgenres = ['empty', ]
         i = 0
         for path in self.songs:
@@ -184,8 +214,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if i == 0:
                     self.fgenres.append(genres)
                 i = 0
-        
+
     def get_fileInterpreters(self):
+        """
+        get the interpreters of the directory
+        """
         self.finterpreters = []
         i = 0
         for path in self.songs:
@@ -195,8 +228,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 0:
                 self.finterpreters.append(self.songs[path].get_interpreter())
             i = 0
-        
+
     def get_fileAlbums(self):
+        """
+        get the albums of the directory
+        """
         self.falbums = []
         i = 0
         for path in self.songs:
@@ -206,12 +242,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i == 0:
                 self.falbums.append(self.songs[path].get_album())
             i = 0
-                
+
     def get_genresBoxes(self):
         """
-        Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
+        creates the checkboxes for filtering with genres
         """
-        
         i=0
         self.checkBox = QCheckBox(self.genreWidget)
         self.checkBox.setLayoutDirection(Qt.LeftToRight)
@@ -230,10 +265,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
             self.checkboxes.append(self.checkBox)
             i += 1
-            
+
     def get_interpreterBoxes(self):
         """
-        Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
+        creates the checkboxes for filtering with interpreters
         """
         i=0
         for interpreter in self.finterpreters:
@@ -245,10 +280,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
             self.checkboxes.append(self.checkBox)
             i += 1
-            
+
     def get_albumBoxes(self):
         """
-        Erstellt die Checkboxes mit welchen man die Lieder nach Genres filtern kann.
+        creates the checkboxes for filtering with albums
         """
         i=0
         for album in self.falbums:
@@ -260,24 +295,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.checkBox.stateChanged.connect(self.checkCheckboxes)
             self.checkboxes.append(self.checkBox)
             i += 1
-            
+
     def get_allBoxes(self):
+        """
+        removes then creates all boxes for filtering
+        """
         for checkbox in self.checkboxes:
             self.genreLayout.removeWidget(checkbox)
             self.albumLayout.removeWidget(checkbox)
             self.interpreterLayout.removeWidget(checkbox)
             checkbox.hide()
         self.checkboxes = []
-        
+
         self.get_fileGenres()
         self.get_fileAlbums()
         self.get_fileInterpreters()
-        
+
         self.get_interpreterBoxes()
         self.get_albumBoxes()
         self.get_genresBoxes()
-            
+
     def checkBoxTypes(self):
+        """
+        checks how many checkboxes are active and which types
+        """
         type = 0
         self.genrecount = 0
         self.albumcount = 0
@@ -298,21 +339,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         type += 1
                     checkboxlist[0].append(checkbox.text())
                     self.genrecount += 1
-                    
+
                 if checkbox.parentWidget() == self.albumWidget:
                     if not album:
                         album = True
                         type += 2
                     checkboxlist[1].append(checkbox.text())
                     self.albumcount += 1
-                
+
                 if  checkbox.parentWidget() == self.interpreterWidget:
                     if not interpreter:
                         interpreter = True
                         type += 4
                     checkboxlist[2].append(checkbox.text())
                     self.interpretercount += 1
-                    
+
                 if genre:
                     self.activatedcheckboxes.setdefault('genre', checkboxlist[0])
                 if album:
@@ -320,10 +361,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if interpreter:
                     self.activatedcheckboxes.setdefault('interpreter', checkboxlist[2])
         return type
-    
+
     def checkCheckboxes(self):
         """
-        Überprüft die aktivierten Checkboxen und gibt die gesuchten Resultate aus.
+        checks all checkboxes and shows the filtered ones
         """
         type = self.checkBoxTypes()
         self.filtersongs = []
@@ -337,20 +378,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.filtersongs.append(self.songs[song])
         if type & 1:
             self.filter_genre(self.activatedcheckboxes)
-            
+
         if type & 2:
             self.filter_album(self.activatedcheckboxes)
-            
+
         if type & 4:
             self.filter_interpreter(self.activatedcheckboxes)
-            
+
         if type:
             self.reload_Table()
         else:
             #Falls nichts ausgewählt wurde wird die komplette Liste ausgegeben.
             self.fill_Table()
-            
+
     def filter_genre(self, titles):
+        """
+        filter for genre
+        """
         self.genrefiltered = True
         for song in self.filtersongs:
             i = 0
@@ -367,8 +411,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                 i += 1
                                 if i == self.genrecount:
                                     self.genrefiltersongs.append(song)
-                            
+
     def filter_album(self, titles):
+        """
+        filter for album
+        """
         self.albumfiltered = True
         if self.genrefiltersongs:
             songs = self.genrefiltersongs
@@ -384,9 +431,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             i += 1
                             if i == self.albumcount:
                                 self.albumfiltersongs.append(song)
-            
-            
+
     def filter_interpreter(self, titles):
+        """
+        filter for interpreter
+        """
         self.interpreterfiltered= True
         if self.albumfiltersongs:
             songs = self.albumfiltersongs
@@ -404,45 +453,52 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                             i += 1
                             if i == self.interpretercount:
                                 self.interpreterfiltersongs.append(song)
-            
-        
+
     def reload_Table(self):
         """
-        Gibt nur die gesuchten Genres in der Liste aus.
+        loads the table with the filtered songs
         """
         self.tableWidget.setRowCount(0)
         if self.interpreterfiltered:
             pastes = self.interpreterfiltersongs
-            
+
         elif self.albumfiltered:
             pastes = self.albumfiltersongs
-            
+
         else:
             pastes = self.genrefiltersongs
+
         for paste in pastes:
             self.add_line(paste.get_path())
-        
+
     def genrefactory(self, path, genres):
+        """
+        go through all genres in a file and add them to the db
+        """
         for genre in genres:
             self.genreadd(path, genre)
-            
+
     def genreadd(self, path, genre):
+        """
+        make the connections between song and genre or if it does not exist add the genre to the db and then make connection 
+        """
         if not self.searchgenre(genre):
             gen = (None, genre)
             self.c.execute("INSERT INTO genre VALUES (?,?)", gen)
             self.conn.commit()
-                
+
         self.c.execute("SELECT genre_ID FROM genre WHERE genre_name = ?", (genre, ))
         genre_ID = self.c.fetchone()['genre_ID']
-        
-        
+
         if not self.genre_musicexists(path, genre_ID):
             insert = (path, genre_ID)
             self.c.execute("INSERT INTO music_genre VALUES (?,?)", insert)
             self.conn.commit()
-                
-        
+
     def genre_musicexists(self, path, genre_ID):
+        """
+        check if connection already exists
+        """
         tests = [path, genre_ID]
         self.c.execute('SELECT * FROM music_genre WHERE music_path=? AND genre_ID=?', tests)
         empty = self.c.fetchone()
@@ -450,8 +506,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return True
         else:
             return False
-            
+
     def testinterpreter(self, path, interpreter):
+        """
+        check if the file interpreter is different as the interpreter in db
+        """
         self.c.execute('SELECT interpreter_FK FROM music WHERE path=?', (path, ))
         interpreter_ID = self.c.fetchone()['interpreter_FK']
         self.c.execute('SELECT interpreter_name FROM interpreter WHERE interpreter_ID=?', (interpreter_ID, ))
@@ -461,47 +520,53 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 interp = (None, interpreter)
                 self.c.execute('INSERT INTO interpreter VALUES(?,?)', interp)
                 self.conn.commit()
-            
+
             self.interpreterIsNeeded(ointerpreter)
             self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name=?', (interpreter, ))
             interpreter_ID = self.c.fetchone()['interpreter_ID']
         return interpreter_ID
-        
+
     def make_Table(self):
+        """
+        make the table and the checkboxes
+        """
         paths = []
         for i in range(len(self.files)):
             paths.append(unicode(self.currentDir.absoluteFilePath(self.files[i])))
-            
-        self.fileAddInDB(paths, False)
 
+        self.fileAddInDB(paths, False)
         self.fill_Table()
         self.get_allBoxes()
-        
+
     def getData(self, path):
+        """
+        get the fileinfos
+        """
+        from mutagen.mp3 import MP3
         type = magic.from_file(path)
         if "MPEG ADTS" in type:
             try:
-                audio = EasyID3(path)
+                audio = mutagen.easyid3.EasyID3(path)
                 try:
                     title = audio["title"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     title = "unknown"
-                    
+
                 try:
                     album = audio["album"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     album = "unknown"
-                    
+
                 try:
                     genre = audio["genre"]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     genre = ["empty", ]
-                    
+
                 try:
                     artist = audio["artist"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     artist = "unknown"
-            
+
                 try:
                     comment = audio["album"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
@@ -512,26 +577,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 artist = "unknown"
                 comment = "empty"
                 genre = ["empty", ]
-                
+
             info = MP3(path)
             length = int(info.info.length)
         else:
             raise ValueError
         return title, album, artist, comment, genre, length
-        
+
     def addInterpreter(self, artist):
+        """
+        add interpreter to db
+        """
         interp = (None, artist)
-        self.c.execute('''INSERT INTO interpreter VALUES(?,?)''', interp)
-    
+        self.c.execute('INSERT INTO interpreter VALUES(?,?)', interp)
+
     def addMusic(self, path, title, album, artist, comment, genre, length):
+        """
+        add song to db
+        """
         self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (artist,))
-      
         interpreter_ID = self.c.fetchone()
-      
+
         inserts = (path, title, album, interpreter_ID["interpreter_ID"], comment, 0, length, 0.5, 0, 10)
         self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?)', inserts)
-    
+
     def fileAddInDB(self, paths, playlist):
+        """
+        add all songs in db and check for errors
+        """
         import logging
         logger = logging.getLogger('musicmanager')
         hdlr = logging.FileHandler('tmp/error.log')
@@ -539,7 +612,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
         logger.setLevel(logging.WARNING)
-        
+
         self.load = Loading(len(paths)*2)
         self.load.show()
         i = 0
@@ -556,7 +629,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             i+=1
             self.load.progressBar.setValue(i)
         self.conn.commit()
-        
+
         for path in paths:
             try:
                 title, album, artist, comment, genre, length = self.getData(path)
@@ -573,7 +646,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if i >= len(paths)*2:
                 self.load.close()
         self.conn.commit()
-        
+
         for path in paths:
             try:
                 data, genre = self.get_dbData(path)
@@ -586,14 +659,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def fill_Table(self):
         """
-        Füllt die Tabelle komplett mit allen Songs.
+        fill the table
         """
         self.tableWidget.setRowCount(0)
-            
+
         for path in self.songs:
             self.add_line(path)
-            
+
     def fill_row(self):
+        """
+        update row in table
+        """
         song = self.get_objectItems(self.songs, self.Spath)
         row = self.tableWidget.currentRow()
         qname = QTableWidgetItem(song['path'].split( "/")[-1])
@@ -604,21 +680,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         qtimesplayed = QTableWidgetItem(unicode(song['timesplayed']))
         qrating = QTableWidgetItem(unicode(song['rating']))
         qgenres = QTableWidgetItem(', '.join(song['genre']))
-        
+
         songs = [qpath, qname, qtitle, qalbum, qinterpreter, qgenres, qtimesplayed, qrating]
-        
+
         for i in range(self.tableWidget.columnCount()):
             if i:
                 self.tableWidget.setItem(row, i, songs[i])
-        
-    
+
     def add_line(self, path):
         """
-        Fügt eine Zeile in die Tabelle ein.
+        add row in table
         """
         song = self.get_objectItems(self.songs, path)
-        
-        
+
         qname = QTableWidgetItem(song['path'].split( "/")[-1])
         qpath = QTableWidgetItem(song['path'])
         qtitle = QTableWidgetItem(song['title'])
@@ -626,7 +700,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         qinterpreter = QTableWidgetItem(song['interpreter'])
         qtimesplayed = QTableWidgetItem(unicode(song['timesplayed']))
         qrating = QTableWidgetItem(unicode(song['rating']))
-        
+
         row = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row)
         self.tableWidget.setItem(row, 0, qpath)
@@ -634,28 +708,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setItem(row, 2, qtitle)
         self.tableWidget.setItem(row, 3, qalbum)
         self.tableWidget.setItem(row, 4, qinterpreter)
-        
+
         if song['genre'][0]:
             qgenres = QTableWidgetItem(', '.join(song['genre']))
             self.tableWidget.setItem(row, 5, qgenres)
         self.tableWidget.setItem(row, 6, qtimesplayed)
         self.tableWidget.setItem(row, 7, qrating)
-        
-    
+
     def searchpath(self,  path):
         """
-        Überprüft ob Datei bereits in der Datenbank existiert.
+        check if record already exists
         """
         self.c.execute("SELECT path FROM music WHERE path = ?", (path, ))
         empty = self.c.fetchone()
-        if (empty):
+        if empty:
             return True
         else:
             return False
-        
+
     def interpreterIsNeeded(self, interpreter):
         """
-        Überprüft ob der Interpreter noch benutzt wird, sonst wird er gelöscht.
+        check if interpreter is still needed, else delete it
         """
         self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(interpreter), ))
         interpreter_ID = self.c.fetchone()
@@ -665,18 +738,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.c.execute('DELETE FROM interpreter WHERE interpreter_ID = ?', (interpreter_ID['interpreter_ID'], ))
             self.conn.commit()
-    
+
     def searchgenre(self, genre):
+        """
+        check if genre already exists
+        """
         self.c.execute("SELECT genre_name FROM genre WHERE genre_name = ?", (genre, ))
         empty = self.c.fetchone()
         if empty:
             return True
         else:
             return False
-    
+
     def searchartist(self,  artist):
         """
-        Überprüft ob der Artist (Interpreter) bereits existiert.
+        check if interpreter already exists
         """
         self.c.execute("SELECT interpreter_name FROM interpreter WHERE interpreter_name = ?", (artist,))
         empty = self.c.fetchone()
@@ -684,51 +760,51 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return True
         else:
             return False
-            
+
     def update_file(self):
         """
-        Metadaten der Datei ändern.
+        save changes in file
         """
         song = self.get_objectItems(self.songs, self.Spath)
         try:
-            audio = EasyID3(self.Spath)
+            audio = mutagen.easyid3.EasyID3(self.Spath)
         except mutagen.id3.ID3NoHeaderError:
             audio = mutagen.File(self.Spath, easy=True)
             audio.add_tags()
         genres = []
-        
+
         for genre in song["genre"]:
             genres.append(genre)
-        
+
         audio["title"] = song["title"]
         audio["album"] = song["album"]
         audio["artist"] = song["interpreter"]
         audio["genre"] = genres
-        
+
         audio.save()
-        
+
     def update_db(self, object, path):
         """
-        Datenbank wird verändert.
+        save changes in db
         """
         song = self.get_objectItems(object, path)
         if not self.searchartist (song['interpreter']):
             interp = (None, song['interpreter'])
             self.c.execute('''INSERT INTO interpreter VALUES(?,?)''', interp)
-            
+
         self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(song['interpreter']), ))
         interpreter_ID = self.c.fetchone()
-        
+
         ex = [song['title'], song['album'], interpreter_ID['interpreter_ID'], song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
         self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
         self.conn.commit()
-        
+
         if hasattr(self, 'ointerpreter'):
             self.interpreterIsNeeded(self.ointerpreter)
-            
+
     def update_dball(self, object):
         """
-        Datenbank wird verändert bei allen Veränderungen.
+        save all changes in db
         """
         for path in object:
             song = self.get_objectItems(object, path)
@@ -736,24 +812,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 interp = (None, song['interpreter'])
                 self.c.execute('''INSERT INTO interpreter VALUES(?,?)''', interp)
                 self.conn.commit()
-                
+
             self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(song['interpreter']), ))
             interpreter_ID = self.c.fetchone()
-            
+
             ex = [song['title'], song['album'], interpreter_ID['interpreter_ID'], song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
             self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
         self.conn.commit()
-        
+
     def get_playlistItemWithPath(self, path):
+        """
+        get the playlistwidgetitem with path
+        """
         for i in range(self.playlistWidget.rowCount()):
             if path == self.playlistWidget.item(i, 0).text():
                 return self.playlistWidget.item(i, 0)
-                
+
     def playerPlayNext(self):
-            time.sleep(0.2)
-            self.player.next()
+        """
+        wait for loading and then start next song
+        """
+        time.sleep(0.2)
+        self.player.next()
 
     def start_randomplay(self):
+        """
+        start playing in random mode
+        """
         if not self.playlist:
             return
         if not self.musicframe.isVisible():
@@ -782,20 +867,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.player.volume = self.volume
         self.soundSlider.setValue(self.volume)
         self.soundSlider.setSliderPosition(self.volume)
-        
+
     def increase_chance(self):
+        """
+        increase the chance in random mode
+        """
         for path in self.playlist:
             if path != self.song.get_path():
                 self.playlist[path].increasechance(self.count)
-        
+
     def decrease_chance(self):
+        """
+        decrease chance in random mode
+        """
         self.playlist[self.song.get_path()].decreasechance(self.count)
-        
+
     def get_randomcount(self):
+        """
+        get the random count which is needed to calculate the next song
+        """
         for path in self.playlist:
             self.randomcount += self.playlist[path].get_chance()
 
     def timeout(self):
+        """
+        update the time in the progress bar
+        """
         if self.paus < 5:
             self.paus += 1
     #TODO: Play Icon and pause Icon
@@ -808,8 +905,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.playlist[self.Ppath].update_timesplayed()
                 self.player.seek(self.START)
                 self.on_nextbutton_clicked()
-                
+
     def get_nextRandomSong(self):
+        """
+        set the next song in random mode
+        """
         self.get_randomcount()
         randomnumber = random.randrange(int(self.randomcount*1000000))
         chance = 0
@@ -818,7 +918,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if chance >= randomnumber:
                 songpath = os.path.abspath(path)
                 break
-                
+
         self.randomcount = 0
         if not 'songpath' in locals():
             self.get_nextRandomSong()
@@ -832,27 +932,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.player.queue(source)
         self.decrease_chance()
         self.increase_chance()
-        
+
         self.get_infos()
-        
+
     def get_next(self):
+        """
+        get the next song in random mode after it went back so it will have a structur
+        """
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
-        
+
         source= pyglet.media.load(path)
         self.player.queue(source)
         self.get_infos()
-        
+
     def get_last(self):
+        """
+        get the last song played in random mode
+        """
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
-        
+
         source= pyglet.resource.media(path)
         self.player.queue(source)
-        
+
         self.get_infos()
 
     def get_nextsong(self):
+        """
+        get next song in normal mode
+        """
         self.update_db(self.playlist, self.Ppath)
         self.playlistWidget.setCurrentCell(self.index, 1)
         path = unicode(self.playlistWidget.item(self.index,  0).text())
@@ -861,10 +970,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.Ppath = path
             source= pyglet.media.load(path)
             self.player.queue(source)
-            self.song = self.playlist[self.Ppath].get_all()
-            self.get_songinformation()
-            
+            self.song = self.playlist[self.Ppath]
+            self.get_infos()
+
     def get_infos(self):
+        """
+        get song information and set them in the player
+        """
         item = self.get_playlistItemWithPath(self.song.get_path())
         self.playlistWidget.setCurrentItem(item)
         song = self.song.get_all()
@@ -878,31 +990,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         range = self.maxlength*50
         self.send_songInfos(length, range)
         self.player.seek(self.START)
-        
-    def get_songinformation(self):
-        self.maxlength = self.song['length']
-        self.timebar.setRange(0, self.maxlength*50)
-        m, s = divmod(self.maxlength, 60)
-        self.length.setText("/ %02d:%02d" % (m, s))
-        self.timebar.setValue(0)
-        self.time.setText("%02d:%02d" % (0, 0))
-        length = "/ %02d:%02d" % (m, s)
-        range = self.maxlength*50
-        self.send_songInfos(length, range)
-        self.player.seek(self.START)
-        
+
     def update_progress(self):
+        """
+        update the progress in time bar and current time
+        """
         self.timebar.setValue(int(self.player.time*50))
         m, s = divmod(int(self.player.time), 60)
         self.time.setText("%02d:%02d" % (m, s))
-        
+
     def releasePlay(self):
+        """
+        release mouse after changing time in time bar
+        """
         if not self.player.playing:
             if self.playing:
                 self.player.play()
                 self.playing = False
-        
+
     def progressMovement(self, percent):
+        """
+        change time bar position
+        """
         if self.player.playing:
             self.player.pause()
             self.playing = True
@@ -910,25 +1019,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             percent = 0.00001
         self.player.seek(percent * self.maxlength)
         self.update_progress()
-        
+
     def trayactivated(self, type):
+        """
+        if tray icon is doubleclicked show window or if single clicked show context menu
+        """
         if type == 2:
             self.doubleclicktimer.stop()
             self.showNormal()
         elif type == QSystemTrayIcon.Trigger:
             self.doubleclicktimer.start(200)
-                
+
     def waitForDoubleclick(self):
+        """
+        wait if user makes a doubleclick
+        """
         self.traymenu.popup(QCursor.pos())
-        
+
     def openWindow(self):
+        """
+        when open is choosed in tray icon context menu show main window
+        """
         self.showNormal()
-        
+
     def exitWindow(self):
+        """
+        close application if exit is pressed int context menu of tray icon
+        """
         self.player.pause()
         QApplication.quit()
-        
+
     def closeEvent(self, event):
+        """
+        handle the close event and stop music and save volume
+        """
         if self.mdlg.isVisible() or self.musicdock.isVisible():
             self.hide()
         else:
@@ -942,6 +1066,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         event.ignore()
 
     def playCurrentSong(self):
+        """
+        play selected song in normal mode
+        """
         if self.RANDOMNESS:
             self.musicframe.setVisible(False)
             self.player = pyglet.media.Player()
@@ -977,6 +1104,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.player.play()
 
     def create_tree(self):
+        """
+        create the tree for the playlists
+        """
         filter = QStringList()
         filter.append("*.xml")
         self.model = QFileSystemModel()
@@ -992,11 +1122,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistTreeView.setHeaderHidden(True)
         self.playlistTreeView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.playlistTreeView.customContextMenuRequested.connect(self.playlistTreeContextMenu)
-        
+
     def create_folder(self):
+        """
+        create a new folder for playlists
+        """
         if self.playlistFolderLineEdit.text():
             name = unicode(self.playlistFolderLineEdit.text())
-            
+
             if self.playlistTreeView.selectedIndexes():
                 index = self.playlistTreeView.selectedIndexes()[0]
                 path = self.get_path(index)
@@ -1012,8 +1145,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             errorBox = QMessageBox(0, "Missing folder name!", "Please enter a folder name")
             errorBox.exec_()
-            
+
     def delete_selectedFile(self):
+        """
+        delete a folder or playlist in playlist tree
+        """
         if self.playlistTreeView.selectedIndexes():
             index = self.playlistTreeView.selectedIndexes()[0]
             path = self.get_path(index)
@@ -1030,6 +1166,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 os.remove(path)
 
     def get_path(self, index):
+        """
+        get path of selected file or folder
+        """
         repath = []
         path = ""
         if self.model.isDir(index):
@@ -1043,8 +1182,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for rpath in reversed(repath):
             path += rpath + "/"
         return path
-    
+
     def search_playlist(self):
+        """
+        search a playlist or folder
+        """
         cursorposition = self.playlistSearchLineEdit.lineEdit().cursorPosition()
         matchlist = self.search_files(unicode(self.playlistSearchLineEdit.currentText()), self.model.index(self.model.rootPath()))
         if len(matchlist) == 1:
@@ -1060,8 +1202,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.playlistSearchLineEdit.showPopup()
             self.playlistSearchLineEdit.lineEdit().setFocus(Qt.PopupFocusReason)
             self.playlistSearchLineEdit.lineEdit().setCursorPosition(cursorposition)
-            
+
     def search_files(self, name, parent):
+        """
+        search through all files and return matched
+        """
         matchlist = []
         it = QDirIterator(parent.data().toString(), QDirIterator.Subdirectories)
         while it.hasNext():
@@ -1070,15 +1215,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if name in last or name == tmp:
                 matchlist.append(tmp)
         return matchlist
-        
+
     def loadFileToPlaylist(self, index):
+        """
+        load a playlist file to active playlist
+        """
         if self.playlist and self.playlistLineEdit.text():
             reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
             if reply == QMessageBox.No:
                 return
         self.playlistWidget.setRowCount(0)
         self.playlist = {}
-        
+
         path = self.get_path(index)
         path += unicode(index.data().toString())
         playlistname, songs = self.load_playlist(path)
@@ -1087,15 +1235,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.playlistAdd(song['path'], False)
         self.playlistTab.setCurrentIndex(1)
 
-    def songInDB(self, path):
-        self.c.execute('SELECT path FROM music WHERE path = ?', (unicode(path), ))
-        exist = self.c.fetchone()
-        if exist:
-            return True
-        else:
-            return False
-            
     def load_playlist(self, path):
+        """
+        get data from playlist
+        """
         tree = ET.parse(path)
         root = tree.getroot()
         songs = []
@@ -1105,42 +1248,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             elif child.tag == "song":
                 songs.append(child.attrib)
         return playlistname, songs
-        
+
     def create_playlist(self, shuffle):
+        """
+        create a new playlist and save it
+        """
         playlist = ET.Element("playlist")
         ET.SubElement(playlist, "name",  name=unicode(self.playlistLineEdit.text()))
         for i in range(self.playlistWidget.rowCount()):
             path = unicode(self.playlistWidget.item(i, 0).text())
             ET.SubElement(playlist,  "song", path=path, played="0")
         tree = ET.ElementTree(playlist)
-        
+
         if self.playlistTreeView.selectedIndexes():
             playlistname = self.get_path(self.playlistTreeView.selectedIndexes()[0])
         else:
             playlistname = "playlists/"
         playlistname +=  unicode(self.playlistLineEdit.text()) + ".xml"
-        
-      
+
         if not self.playlistLineEdit.text() and not shuffle:
             errorBox = QMessageBox(0, "No Playlist Name", "Please insert a name for the playlist!")
             errorBox.exec_()
-            
+
         elif self.playlistWidget.rowCount() == 0:
             errorBox = QMessageBox(0, "No Songs Selected", "Please Drag and Drop some songs in the Playlist!")
             errorBox.exec_()
-            
+
         elif not os.path.isfile(playlistname):
             tree.write(playlistname)
-            
+
         else:
             if not shuffle:
                 reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
                 if reply == QMessageBox.No:
                     return
-                
+
             tree.write(playlistname)
-        
+
     def tableToPlaylist(self):
+        """
+        send edit table to playlist
+        """
         if self.playlist and self.playlistLineEdit.text():
             reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
             if reply == QMessageBox.No:
@@ -1155,16 +1303,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
 
     def playlistAdd(self, path, sort):
+        """
+        add song in playlist
+        """
         existinplaylist = False
         exists = False
         path = unicode(path)
         for row in range(self.playlistWidget.rowCount()):
             if path == self.playlistWidget.item(row, 0).text():
                 existinplaylist = True
-                
-        if path in self.songs or self.songInDB(path):
+
+        if path in self.songs or self.searchpath(path):
             exists = True
-        
+
         if not existinplaylist:
             if not exists:
                 self.fileAddInDB(list(path))
@@ -1172,7 +1323,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             m, s = divmod(data['length'], 60)
             orlength = ('%02d:%02d' % (m, s))
             self.create_object(path, data, genre, True)
-            
+
             qpath = QTableWidgetItem(path)
             qtitle = QTableWidgetItem(data['title'])
             qlength = QTableWidgetItem(orlength)
@@ -1186,15 +1337,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.playlistWidget.sortItems(1)
 
     def switchPlaylistTab(self):
+        """
+        change current playlist tab
+        """
         self.playlistTab.setCurrentIndex(1)
 
     def listViewClose(self):
+        """
+        close popup if user wants to edit search
+        """
         self.playlistSearchLineEdit.hidePopup()
 
     def tableWidgetReturnPressed(self):
+        """
+        add all edit songs to playlist and play song if enter is pressed in edit table
+        """
         self.on_tableWidget_itemDoubleClicked(self.tableWidget.currentItem())
 
     def playlistTreeContextMenu(self, pos):
+        """
+        create context menu for playlist tree
+        """
         index = self.playlistTreeView.indexAt(pos)
         if index.isValid():
             menu = QMenu(self)
@@ -1206,7 +1369,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("QTableWidgetItem*")
     def on_tableWidget_itemDoubleClicked(self, item):
         """
-        Slot documentation goes here.
+        add all edit songs to playlist and play song if user double clicks an edit item
         """
         self.tableToPlaylist()
         self.playCurrentSong()
@@ -1214,7 +1377,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("")
     def on_genreButton_clicked(self):
         """
-        Genres zum Lied überarbeiten.
+        change genres for selected song
         """
         if hasattr(self, 'Spath'):
             del self.songs[self.Spath]
@@ -1226,11 +1389,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.update_file()
             self.get_allBoxes()
             self.fill_row()
-    
+
     @pyqtSignature("")
     def on_saveButton_clicked(self):
         """
-        Änderungen speichern.
+        save changes for song
         """
         if hasattr(self,  'Spath'):
             title = unicode(self.lineEditTitle.text())
@@ -1246,13 +1409,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.get_allBoxes()
             self.update_file()
             self.fill_row()
-    
+
     @pyqtSignature("")
     def on_resetallbutton_clicked(self):
         """
-        Slot documentation goes here.
+        shuffle playlist
         """
-        
         if hasattr(self, 'playlist'):
             self.playlistWidget.setRowCount(0)
             songs = []
@@ -1264,44 +1426,53 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.playlistWidget.setFocus()
             self.playlistWidget.setCurrentCell(0, 1)
             self.create_playlist(True)
-    
+
     @pyqtSignature("")
     def on_playallbutton_clicked(self):
         """
-        Slot documentation goes here.
+        play playlist
         """
         if hasattr(self, 'playlist'):
             if not self.playlistWidget.selectedIndexes():
                 self.playlistWidget.setFocus()
                 self.setCurrentCell(0, 1)
             self.playCurrentSong()
-            
+
     @pyqtSignature("")
     def on_playbutton_clicked(self):
+        """
+        play playlist in random mode
+        """
         self.start_randomplay()
 
     @pyqtSignature("")
     def on_playbutton_2_clicked(self):
         """
-        Slot documentation goes here.
+        
         """
         if not self.player.playing:
             self.player.play()
             self.playing = True
-    
+
     @pyqtSignature("")
-    def on_pausebutton_clicked(self):
+    def on_playpausebutton_clicked(self):
         """
-        Slot documentation goes here.
+        play or pause music
         """
-        if self.player.playing:
-            self.player.pause()
-            self.playing = False
-    
+        if self.paus >= 5:
+            if self.player.playing:
+                self.player.pause()
+                self.playing = False
+                self.playpausebutton.setIcon(QIcon('resources/play.png'))
+            else:
+                self.player.play()
+                self.playing = True
+                self.playpausebutton.setIcon(QIcon('resources/pause.png'))
+
     @pyqtSignature("")
     def on_previousbutton_clicked(self):
         """
-        Slot documentation goes here.
+        play last song
         """
         if self.player.time <= 3:
             if self.index > 0:
@@ -1315,11 +1486,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.single = False
         else:
             self.player.seek(self.START)
-    
+
     @pyqtSignature("")
     def on_nextbutton_clicked(self):
         """
-        Slot documentation goes here.
+        play next song
         """
         if self.paus == 5:
             self.paus = 0
@@ -1343,14 +1514,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("int")
     def on_soundSlider_valueChanged(self, value):
         """
-        Slot documentation goes here.
+        change volume
         """
         self.player.volume = self.soundSlider.value()
 
     @pyqtSignature("QAction*")
     def on_menuBar_triggered(self, action):
         """
-        Slot documentation goes here.
+        menu bar actions
         """
         if action.text() == "Refresh":
             self.update_dball(self.playlist)
@@ -1384,12 +1555,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("")
     def on_filterResetButton_clicked(self):
         """
-        Slot documentation goes here.
+        reset song filter
         """
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
-            
+
     def eventFilter(self, source, e):
+        """
+        filter events
+        """
         if source == self.playlistWidget:
             if e.type() == QEvent.KeyPress:
                 if e.key() == Qt.Key_Return:
@@ -1409,7 +1583,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if e.type() == QEvent.KeyPress:
                 if e.key() == Qt.Key_Delete:
                     self.delete_selectedFile()
-                    
+
         if source == self.musicdock:
             if e.type() == QEvent.Close:
                 self.closeMusic()
@@ -1418,25 +1592,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         return False
 
-    
     @pyqtSignature("")
     def on_playlistSaveButton_clicked(self):
         """
-        Slot documentation goes here.
+        save playlist
         """
         self.create_playlist(False)
-        
+
     @pyqtSignature("QTableWidgetItem*")
     def on_playlistWidget_itemDoubleClicked(self, item):
         """
-        Slot documentation goes here.
+        play clicked song
         """
         self.playCurrentSong()
-    
+
     @pyqtSignature("")
     def on_tableWidget_itemSelectionChanged(self):
         """
-        Slot documentation goes here.
+        change current editable
         """
         if self.tableWidget.selectedItems():
             item = self.tableWidget.selectedItems()[0]
@@ -1448,45 +1621,48 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.lineEditComment.setText(items['comment'])
             self.spinBoxRating.setValue(int(items['rating']))
             self.csCheckBox.setChecked(items['cs'])
-    
+
     @pyqtSignature("QModelIndex")
     def on_playlistTreeView_doubleClicked(self, index):
         """
-        Slot documentation goes here.
+        create playlist in clicked folder or load playlist
         """
         if self.model.isDir(index):
             self.playlistTab.setCurrentIndex(1)
         else:
             self.loadFileToPlaylist(index)
-    
+
     @pyqtSignature("")
     def on_playlistCreateFolderButton_clicked(self):
         """
-        Slot documentation goes here.
+        create folder
         """
         self.create_folder()
 
     @pyqtSignature("")
     def on_playlistSearchButton_clicked(self):
         """
-        Slot documentation goes here.
+        search playlist or folder
         """
         self.search_playlist()
-    
+
     @pyqtSignature("")
     def on_playlistFolderLineEdit_returnPressed(self):
         """
-        Slot documentation goes here.
+        search playlist or folder
         """
         self.create_folder()
-        
+
     def playlistSearchEnterPressed(self):
+        """
+        search playlist or folder
+        """
         self.search_playlist()
-    
+
     @pyqtSignature("bool")
     def on_musicdock_topLevelChanged(self, topLevel):
         """
-        Slot documentation goes here.
+        hide dockwidget and show music player in dialog
         """
         if topLevel:
             self.musicdock.setVisible(False)
@@ -1494,12 +1670,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.mdlg.showNormal()
             
     def playerClosed(self, int):
+        """
+        show dockwidget if music player is hidden and close player if music player is closed
+        """
         self.musicdock.setVisible(True)
         self.musicdock.setFloating(False)
         if int == 0:
             self.closeMusic()
 
     def closeMusic(self):
+        """
+        close music and set it to start position
+        """
         if self.player.playing:
             self.player.pause()
             self.playing = False
@@ -1509,30 +1691,57 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_dball(self.playlist)
 
     def send_songInfos(self, length, timebarrange):
+        """
+        send songinformations to dialog
+        """
         items = self.get_objectItems(self.playlist, self.Ppath)
         self.mdlg.set_songInfos(items['title'], items['album'], items['interpreter'], items['rating'], length, timebarrange)
 
     def mpplayclicked(self):
+        """
+        get clicked signal of dialog
+        """
         self.on_playbutton_2_clicked()
-        
+
     def mppauseclicked(self):
+        """
+        get clicked signal of dialog
+        """
         self.on_pausebutton_clicked()
-        
+
     def mpnextclicked(self):
+        """
+        get clicked signal of dialog
+        """
         self.on_nextbutton_clicked()
-        
+
     def mppreviousclicked(self):
+        """
+        get clicked signal of dialog
+        """
         self.on_previousbutton_clicked()
-        
+
     def mpsoundsliderchanged(self, value):
+        """
+        get sound changed
+        """
         self.on_soundSlider_valueChanged(value)
-        
+
     def mpratingchanged(self, rating):
+        """
+        get rating changed
+        """
         self.playlist[self.Ppath].set_rating(rating)
-        
+
     def mptimechanged(self, percent):
+        """
+        send time changed information
+        """
         self.progressMovement(percent)
         self.mdlg.update_progress(int(self.player.time))
-    
+
     def mprelease(self):
+        """
+        get signal if mouse is released
+        """
         self.releasePlay()

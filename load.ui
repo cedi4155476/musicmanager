@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Load Data</string>
+   <string>Load Songs</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

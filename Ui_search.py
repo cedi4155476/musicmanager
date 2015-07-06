@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/search.ui'
 #
-# Created: Wed May 27 11:18:03 2015
+# Created: Mon Jul  6 15:10:43 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -51,7 +51,7 @@ class Ui_Dialog(object):
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(_translate("Dialog", "Ordner suchen", None))
+        Dialog.setWindowTitle(_translate("Dialog", "Search directory", None))
         self.directoryPath.setText(_translate("Dialog", "Browse", None))
 
 
