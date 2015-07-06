@@ -6,15 +6,10 @@ This programm is for people who likes to hear music in a random loop so that one
 
 This programm is not finished, so there will be some errors and it needs a lot more testing before it works like it should.
 At the moment only mp3 files are working but even some of the mp3 files arent running. I try to fix this problem.
-## Importet libraries
-
-* pyglet
-* magic
-* sqlite3
-* mutagen
-* os.path
-* random
-* PyQt4
+## Install with pip
+<pre>
+pip install music_manager
+</pre>
 
 ## Bug reports
 
