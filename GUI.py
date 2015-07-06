@@ -2,7 +2,7 @@
 """
 Module implementing MainWindow.
 """
-import pyglet, magic, sqlite3, mutagen, os.path, shutil, random, time
+import pyglet, magic, sqlite3, mutagen, os.path, shutil, random, time, ConfigParser
 import xml.etree.cElementTree as ET
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -35,6 +35,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.adjust_gui()
         self.createSystemTray()
         self.installEventFilter()
+        self.make_connections()
         self.mdlg = MusicPlayer()
         self.musicplayersetslots()
         self.dlg = SearchDialog()
@@ -142,6 +143,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.songs = {}
         self.info = []
         self.loadErrors = []
+        self.trayicon.setIcon(QIcon('resources/trayicon.png'))
 
     def dict_factory(self, cursor, row):
         """
@@ -820,6 +822,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
         self.conn.commit()
 
+    def get_volume(self):
+        try:
+            config = ConfigParser.ConfigParser()
+            config.read('config.ini')
+            self.volume = int(config.get('player', 'volume'))
+        except ConfigParser.NoSectionError:
+            self.volume = 1
+
+    def save_volume(self):
+        cfgfile = open('config.ini', 'w')
+        config = ConfigParser.ConfigParser()
+        config.add_section('player')
+        config.set('player', 'volume', self.volume)
+        config.write(cfgfile)
+        cfgfile.close()
+
     def get_playlistItemWithPath(self, path):
         """
         get the playlistwidgetitem with path
@@ -861,9 +879,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.get_nextRandomSong()
         if alreadystarted:
             self.playerPlayNext()
-        self.player.play()
-        self.c.execute('SELECT volume FROM volume')
-        self.volume = self.c.fetchone()['volume']
+        self.playPlayer()
+        self.get_volume()
         self.player.volume = self.volume
         self.soundSlider.setValue(self.volume)
         self.soundSlider.setSliderPosition(self.volume)
@@ -895,9 +912,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if self.paus < 5:
             self.paus += 1
-    #TODO: Play Icon and pause Icon
-#        if self.player.playing and not self.playset:
-#            self.trayicon.setIcon('path')
         if self.player.playing and not self.single:
             self.update_progress()
             self.mdlg.update_progress(self.player.time)
@@ -905,6 +919,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.playlist[self.Ppath].update_timesplayed()
                 self.player.seek(self.START)
                 self.on_nextbutton_clicked()
+
+    def playPlayer(self):
+        self.trayicon.setIcon(QIcon('resources/trayiconplay.png'))
+        self.player.play()
+
+    def pausePlayer(self):
+        self.trayicon.setIcon(QIcon('resources/trayiconpause.png'))
+        self.player.pause()
 
     def get_nextRandomSong(self):
         """
@@ -1005,7 +1027,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if not self.player.playing:
             if self.playing:
-                self.player.play()
+                self.playPlayer()
                 self.playing = False
 
     def progressMovement(self, percent):
@@ -1013,7 +1035,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         change time bar position
         """
         if self.player.playing:
-            self.player.pause()
+            self.pausePlayer()
             self.playing = True
         if not percent:
             percent = 0.00001
@@ -1046,7 +1068,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         close application if exit is pressed int context menu of tray icon
         """
-        self.player.pause()
+        self.pausePlayer()
         QApplication.quit()
 
     def closeEvent(self, event):
@@ -1057,9 +1079,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.hide()
         else:
             if hasattr(self, 'player'):
-                self.player.pause()
-                self.c.execute('UPDATE volume SET volume=? WHERE volume_ID=1', (unicode(self.player.volume), ))
-                self.conn.commit()
+                self.pausePlayer()
+                self.save_volume()
                 self.update_dball(self.playlist)
             QApplication.quit()
             event.accept()
@@ -1088,9 +1109,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.START = 0.000001
             self.Ppath = unicode(self.playlistWidget.item(self.index,  0).text())
             self.get_nextsong()
-            self.player.play()
-            self.c.execute('SELECT volume FROM volume')
-            self.volume = self.c.fetchone()['volume']
+            self.playPlayer()
+            self.get_volume()
             self.player.volume = self.volume
             self.soundSlider.setValue(self.volume)
             self.soundSlider.setSliderPosition(self.volume)
@@ -1101,7 +1121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.get_nextsong()
             self.playerPlayNext()
             self.single = False
-            self.player.play()
+            self.playPlayer()
 
     def create_tree(self):
         """
@@ -1451,7 +1471,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         
         """
         if not self.player.playing:
-            self.player.play()
+            self.playPlayer()
             self.playing = True
 
     @pyqtSignature("")
@@ -1461,11 +1481,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if self.paus >= 5:
             if self.player.playing:
-                self.player.pause()
+                self.pausePlayer()
                 self.playing = False
                 self.playpausebutton.setIcon(QIcon('resources/play.png'))
             else:
-                self.player.play()
+                self.playPlayer()
                 self.playing = True
                 self.playpausebutton.setIcon(QIcon('resources/pause.png'))
 
@@ -1517,6 +1537,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         change volume
         """
         self.player.volume = self.soundSlider.value()
+        self.volume = self.soundSlider.value()
 
     @pyqtSignature("QAction*")
     def on_menuBar_triggered(self, action):
@@ -1530,7 +1551,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         elif action.text() == "Change Directory":
             self.reset_all()
-            self.player.pause()
+            self.pausePlayer()
             self.dlg = SearchDialog()
             self.dlg.exec_()
             self.songs = {}
@@ -1683,11 +1704,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         close music and set it to start position
         """
         if self.player.playing:
-            self.player.pause()
+            self.pausePlayer()
             self.playing = False
         self.musicframe.setVisible(False)
         self.Ppath = ""
         self.player= pyglet.media.Player()
+        self.trayicon.setIcon(QIcon('resources/trayicon.png'))
         self.update_dball(self.playlist)
 
     def send_songInfos(self, length, timebarrange):
