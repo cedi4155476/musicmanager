@@ -8,6 +8,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 from search import SearchDialog
+from edit import Edit
 from genre import Genre
 from song import Song
 from info import Info
@@ -31,6 +32,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         the constructor replacement so it does not crash
         """
         self.db_connect()
+        self.create_config()
         self.setupUi(self)
         self.adjust_gui()
         self.createSystemTray()
@@ -64,12 +66,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.c = self.conn.cursor()
         try:
             self.c.execute('SELECT path FROM music')
-        except:
-            for line in open('dbcreate.sql'):
+        except sqlite3.OperationalError:
+            for line in open('dbcreate.py'):
                 try:
                     self.c.execute(line)
                 except sqlite3.OperationalError:
                     break
+
+    def create_config(self):
+        if not os.path.isfile('config.ini'):
+            cfgfile = open('config.ini', 'w')
+            config = ConfigParser.ConfigParser()
+            config.add_section('player')
+            config.set('player', 'volume', 1)
+            config.add_section('directory')
+            config.set('directory', 'path', "")
+            config.write(cfgfile)
+            cfgfile.close()
 
     def adjust_gui(self):
         """
@@ -158,15 +171,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         more edit varieties
         """
-        #TODO: Add detailed Edit Dialog
         if hasattr(self, 'Spath'):
-            pass
+            edit = Edit(self.songs[self.Spath])
+            ret = edit.exec_()
+            if ret == QDialog.Accepted:
+                self.ointerpreter = self.songs[self.Spath].get_interpreter()
+                self.oalbuminterpreter = self.songs[self.Spath].get_albuminterpreter()
+                self.ocomposer = self.songs[self.Spath].get_composer()
+                track, cd, bpm, title, interpreter, composer, albuminterpreter, album, year, comment = edit.get_infos()
+
+                self.songs[self.Spath].updateInfos(track, cd, bpm, title, interpreter, composer, albuminterpreter, album, year, comment)
+                self.update_db(self.songs, self.Spath)
+                self.get_allBoxes()
+                self.update_file()
+                self.fill_row()
 
     def get_dbData(self, path):
         """
         get all infos from database for defined path
         """
-        self.c.execute('''SELECT music.title as title, music.album as album, music.comment as comment, music.cs as cs,  genre.genre_name as genre, interpreter.interpreter_name as interpreter, music.length as length, music.chance as chance, music.times_played as timesplayed, music.rating as rating
+        self.c.execute('''SELECT music.title as title, music.album as album, music.comment as comment, music.cs as cs,  genre.genre_name as genre, interpreter.interpreter_name as interpreter,
+                                                music.length as length, music.chance as chance, music.times_played as timesplayed, music.rating as rating, music.bpm as bpm, music.year as year,
+                                                music.track as track, composer.composer_name as composer, albuminterpreter.albuminterpreter_name as albuminterpreter, music.cd as cd
                                     FROM music 
                                     LEFT OUTER JOIN music_genre 
                                         ON music.path = music_genre.music_path 
@@ -174,6 +200,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                         ON music_genre.genre_ID = genre.genre_ID
                                     LEFT OUTER JOIN interpreter
                                         ON music.interpreter_FK = interpreter.interpreter_ID
+                                    LEFT OUTER JOIN albuminterpreter
+                                        ON music.albuminterpreter_FK = albuminterpreter.albuminterpreter_ID
+                                    LEFT OUTER JOIN composer
+                                        ON music.composer_FK = composer.composer_ID
                                         WHERE music.path = ?''',  (path, ))
         datas = self.c.fetchall()
         i = 0
@@ -192,15 +222,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         create object for playlist or for editing in table
         """
         if playlist:
-            self.playlist.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating']))
+            self.playlist.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
         else:
-            self.songs.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating']))
-
-    def get_objectItems(self, object, path):
-        """
-        get everything for an object easier
-        """
-        return object[path].get_all()
+            self.songs.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
 
     def get_fileGenres(self):
         """
@@ -274,14 +298,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         i=0
         for interpreter in self.finterpreters:
-            self.checkBox = QCheckBox(self.interpreterWidget)
-            self.checkBox.setLayoutDirection(Qt.LeftToRight)
-            self.checkBox.setObjectName(interpreter)
-            self.interpreterLayout.setWidget(i, 0, self.checkBox)
-            self.checkBox.setText(interpreter)
-            self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.append(self.checkBox)
-            i += 1
+            if interpreter:
+                self.checkBox = QCheckBox(self.interpreterWidget)
+                self.checkBox.setLayoutDirection(Qt.LeftToRight)
+                self.checkBox.setObjectName(interpreter)
+                self.interpreterLayout.setWidget(i, 0, self.checkBox)
+                self.checkBox.setText(interpreter)
+                self.checkBox.stateChanged.connect(self.checkCheckboxes)
+                self.checkboxes.append(self.checkBox)
+                i += 1
 
     def get_albumBoxes(self):
         """
@@ -289,14 +314,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         i=0
         for album in self.falbums:
-            self.checkBox = QCheckBox(self.albumWidget)
-            self.checkBox.setLayoutDirection(Qt.LeftToRight)
-            self.checkBox.setObjectName(album)
-            self.albumLayout.setWidget(i, 0, self.checkBox)
-            self.checkBox.setText(album)
-            self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.append(self.checkBox)
-            i += 1
+            if album:
+                self.checkBox = QCheckBox(self.albumWidget)
+                self.checkBox.setLayoutDirection(Qt.LeftToRight)
+                self.checkBox.setObjectName(album)
+                self.albumLayout.setWidget(i, 0, self.checkBox)
+                self.checkBox.setText(album)
+                self.checkBox.stateChanged.connect(self.checkCheckboxes)
+                self.checkboxes.append(self.checkBox)
+                i += 1
 
     def get_allBoxes(self):
         """
@@ -487,7 +513,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.searchgenre(genre):
             gen = (None, genre)
             self.c.execute("INSERT INTO genre VALUES (?,?)", gen)
-            self.conn.commit()
 
         self.c.execute("SELECT genre_ID FROM genre WHERE genre_name = ?", (genre, ))
         genre_ID = self.c.fetchone()['genre_ID']
@@ -495,7 +520,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.genre_musicexists(path, genre_ID):
             insert = (path, genre_ID)
             self.c.execute("INSERT INTO music_genre VALUES (?,?)", insert)
-            self.conn.commit()
 
     def genre_musicexists(self, path, genre_ID):
         """
@@ -509,24 +533,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             return False
 
-    def testinterpreter(self, path, interpreter):
-        """
-        check if the file interpreter is different as the interpreter in db
-        """
-        self.c.execute('SELECT interpreter_FK FROM music WHERE path=?', (path, ))
-        interpreter_ID = self.c.fetchone()['interpreter_FK']
-        self.c.execute('SELECT interpreter_name FROM interpreter WHERE interpreter_ID=?', (interpreter_ID, ))
-        ointerpreter = self.c.fetchone()['interpreter_name']
-        if ointerpreter != interpreter:
-            if not self.searchartist(interpreter):
-                interp = (None, interpreter)
-                self.c.execute('INSERT INTO interpreter VALUES(?,?)', interp)
-                self.conn.commit()
-
-            self.interpreterIsNeeded(ointerpreter)
-            self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name=?', (interpreter, ))
-            interpreter_ID = self.c.fetchone()['interpreter_ID']
-        return interpreter_ID
+    def testAIC(self, path, type, value):
+        '''
+        check if the file A, I or C is different as the A, I or C in db
+        '''
+        fk = type + "_FK"
+        ID = type + "_ID"
+        name = type + "_name"
+        self.c.execute('SELECT {id} FROM music WHERE path="{pt}"'.format(id=fk, pt=path))
+        type_ID = self.c.fetchone()
+        if type_ID:
+            type_ID = type_ID[fk]
+        self.c.execute('SELECT {nm} FROM {tb} WHERE {id}={tid}'.format(nm=name, tb=type, id=ID, tid=type_ID))
+        ovalue = self.c.fetchone()
+        if ovalue:
+            ovalue = ovalue[name]
+        if ovalue != value:
+            if not self.searchAIC(type, value):
+                ex = (None, value)
+                self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
+            
+            self.AICIsNeeded(type, ovalue)
+            self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (value, ))
+            type_ID = self.c.fetchone()
+            if type_ID:
+                type_ID = type_ID[ID]
+        return type_ID
 
     def make_Table(self):
         """
@@ -544,20 +576,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         get the fileinfos
         """
-        from mutagen.mp3 import MP3
+        from mutagen.mp3 import MP3, HeaderNotFoundError
         type = magic.from_file(path)
-        if "MPEG ADTS" in type:
-            try:
+        try:
+            info = MP3(path)
+            length = int(info.info.length)
+            if "MPEG ADTS" in type or "Audio file" in type or length:
                 audio = mutagen.easyid3.EasyID3(path)
                 try:
                     title = audio["title"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    title = "unknown"
+                    title = ""
 
                 try:
                     album = audio["album"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    album = "unknown"
+                    album = ""
 
                 try:
                     genre = audio["genre"]
@@ -565,43 +599,94 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     genre = ["empty", ]
 
                 try:
-                    artist = audio["artist"][0]
+                    interpreter = audio["artist"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    artist = "unknown"
+                    interpreter = ""
 
                 try:
                     comment = audio["album"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    comment = "empty"
-            except (mutagen.id3.ID3NoHeaderError):
-                title = "unknown"
-                album = "unknown"
-                artist = "unknown"
-                comment = "empty"
+                    comment = ""
+
+                try:
+                    bpm = audio["bpm"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    bpm = ""
+
+                try:
+                    composer = audio["composer"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    composer = ""
+
+                try:
+                    cd = audio["discnumber"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    cd = ""
+
+                try:
+                    track = audio["tracknumber"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    track = ""
+
+                try:
+                    albuminterpreter = audio["albumartist"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    albuminterpreter = ""
+
+                try:
+                    year = audio["date"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    year = ""
+            else:
+                raise ValueError("Could not read File. Are you sure it is a music File?")
+
+        except (mutagen.id3.ID3NoHeaderError):
+                title = ""
+                album = ""
+                interpreter = ""
+                comment = ""
                 genre = ["empty", ]
+                bpm = ""
+                composer = ""
+                cd = ""
+                track = ""
+                albuminterpreter = ""
+                year = ""
 
-            info = MP3(path)
-            length = int(info.info.length)
-        else:
-            raise ValueError
-        return title, album, artist, comment, genre, length
+        except HeaderNotFoundError:
+            raise ValueError("Could not read File. Are you sure it is a music File?")
 
-    def addInterpreter(self, artist):
-        """
-        add interpreter to db
-        """
-        interp = (None, artist)
-        self.c.execute('INSERT INTO interpreter VALUES(?,?)', interp)
+        return title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year
 
-    def addMusic(self, path, title, album, artist, comment, genre, length):
+    def addAIC(self, type, value):
+        '''
+        add AIC to db
+        '''
+        ex = (None, value)
+        self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
+
+    def AICID(self, type, value):
+        '''
+        get ID of AIC
+        '''
+        ID = type + "_ID"
+        name = type + "_name"
+        self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (value, ))
+        type_ID = self.c.fetchone()
+        if type_ID:
+            type_ID = type_ID[ID]
+        return type_ID
+
+    def addMusic(self, path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year):
         """
         add song to db
         """
-        self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (artist,))
-        interpreter_ID = self.c.fetchone()
+        interpreter_ID = self.AICID('interpreter', interpreter)
+        albuminterpreter_ID = self.AICID('albuminterpreter', albuminterpreter)
+        composer_ID = self.AICID('composer', composer)
 
-        inserts = (path, title, album, interpreter_ID["interpreter_ID"], comment, 0, length, 0.5, 0, 10)
-        self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?)', inserts)
+        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, albuminterpreter_ID, composer_ID, bpm, track, cd)
+        self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', inserts)
 
     def fileAddInDB(self, paths, playlist):
         """
@@ -610,53 +695,54 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         import logging
         logger = logging.getLogger('musicmanager')
         hdlr = logging.FileHandler('tmp/error.log')
-        formatter = logging.Formatter('%(asctime)s %(message)s')
+        formatter = logging.Formatter('%(asctime)s %(message)s', "%Y-%m-%d")
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
         logger.setLevel(logging.WARNING)
+        logger.propagate = False
+        
+        if isinstance(paths, basestring):
+            paths = (paths, )
 
-        self.load = Loading(len(paths)*2)
+        self.load = Loading(len(paths))
         self.load.show()
         i = 0
         for path in paths:
+            path = unicode(path)
             try:
-                title, album, artist, comment, genre, length = self.getData(path)
+                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
                 if not self.searchpath(path):
-                    if (not self.searchartist(artist)):
-                        self.addInterpreter(artist)
+                    if (not self.searchAIC('interpreter', interpreter)):
+                        self.addAIC('interpreter', interpreter)
+                    if (not self.searchAIC('albuminterpreter', albuminterpreter)):
+                        self.addAIC('albuminterpreter', albuminterpreter)
+                    if (not self.searchAIC('composer', composer)):
+                        self.addAIC('composer', composer)
                     self.genrefactory(path, genre)
-            except ValueError:
-                logger.warning("failed to load: "+path)
-                self.loadErrors.append(path)
-            i+=1
-            self.load.progressBar.setValue(i)
-        self.conn.commit()
-
-        for path in paths:
-            try:
-                title, album, artist, comment, genre, length = self.getData(path)
-                if not self.searchpath(path):
-                    self.addMusic(path, title, album, artist, comment, genre, length)
+                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
                 else:
-                    interpreter_ID = self.testinterpreter(path, artist)
-                    inserts = (title, album, interpreter_ID, path)
-                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=? WHERE path=?', inserts)
-            except ValueError:
-                pass
-            i+=1
-            self.load.progressBar.setValue(i)
-            if i >= len(paths)*2:
-                self.load.close()
-        self.conn.commit()
-
-        for path in paths:
+                    interpreter_ID = self.testAIC(path, 'interpreter', interpreter)
+                    albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
+                    composer_ID = self.testAIC(path, 'composer', composer)
+                    inserts = (title, album, interpreter_ID, albuminterpreter_ID, composer_ID, path)
+                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=? WHERE path=?', inserts)
+            except ValueError, e:
+                logger.warning("failed to load: %s\tError Message: %s" % (path, e))
+                self.loadErrors.append(path)
             try:
                 data, genre = self.get_dbData(path)
                 self.create_object(path, data, genre, playlist)
             except:
                 pass
+            i+=1
+            self.load.progressBar.setValue(i)
+            if i >= len(paths):
+                self.load.close()
+        logger.removeHandler(hdlr)
+        self.conn.commit()
+
         if len(self.loadErrors) > 0:
-            errorBox = QMessageBox(0, "loading Error", str(len(self.loadErrors)) + " files failed to load \n Watch out for special character or if it is a mp3 file \n More infos about the files in error.log file")
+            errorBox = QMessageBox(0, "loading Error", str(len(self.loadErrors)) + " files failed to load \n Watch out for special character\n More infos about the files in tmp/error.log file")
             errorBox.exec_()
 
     def fill_Table(self):
@@ -672,7 +758,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         update row in table
         """
-        song = self.get_objectItems(self.songs, self.Spath)
+        song = self.songs[self.Spath].get_all()
         row = self.tableWidget.currentRow()
         qname = QTableWidgetItem(song['path'].split( "/")[-1])
         qpath = QTableWidgetItem(song['path'])
@@ -693,15 +779,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         add row in table
         """
-        song = self.get_objectItems(self.songs, path)
+        song = self.songs[path].get_all()
 
-        qname = QTableWidgetItem(song['path'].split( "/")[-1])
-        qpath = QTableWidgetItem(song['path'])
-        qtitle = QTableWidgetItem(song['title'])
-        qalbum = QTableWidgetItem(song['album'])
-        qinterpreter = QTableWidgetItem(song['interpreter'])
-        qtimesplayed = QTableWidgetItem(unicode(song['timesplayed']))
-        qrating = QTableWidgetItem(unicode(song['rating']))
+        qname = self.getValidQTWI(song['path'].split( "/")[-1])
+        qpath = self.getValidQTWI(song['path'])
+        qtitle = self.getValidQTWI(song['title'])
+        qalbum = self.getValidQTWI(song['album'])
+        qinterpreter = self.getValidQTWI(song['interpreter'])
+        qgenres = self.getValidQTWI(', '.join(song['genre']))
+        qtimesplayed = self.getValidQTWI(unicode(song['timesplayed']))
+        qrating = self.getValidQTWI(unicode(song['rating']))
 
         row = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row)
@@ -710,12 +797,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setItem(row, 2, qtitle)
         self.tableWidget.setItem(row, 3, qalbum)
         self.tableWidget.setItem(row, 4, qinterpreter)
-
-        if song['genre'][0]:
-            qgenres = QTableWidgetItem(', '.join(song['genre']))
-            self.tableWidget.setItem(row, 5, qgenres)
+        self.tableWidget.setItem(row, 5, qgenres)
         self.tableWidget.setItem(row, 6, qtimesplayed)
         self.tableWidget.setItem(row, 7, qrating)
+
+    def getValidQTWI(self, value):
+        if value:
+            return QTableWidgetItem(value)
+        else:
+            return QTableWidgetItem()
 
     def searchpath(self,  path):
         """
@@ -728,17 +818,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             return False
 
-    def interpreterIsNeeded(self, interpreter):
-        """
-        check if interpreter is still needed, else delete it
-        """
-        self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(interpreter), ))
-        interpreter_ID = self.c.fetchone()
-        self.c.execute('SELECT interpreter_FK FROM music WHERE interpreter_FK = ?', (interpreter_ID['interpreter_ID'], ))
+    def AICIsNeeded(self, type, value):
+        '''
+        check if AIC is still needed, else delete it
+        '''
+        ID = type + "_ID"
+        fk = type + "_FK"
+        name = type + "_name"
+        self.c.execute('SELECT {id} FROM {tb} WHERE {nm}="{vl}"'.format(id=ID, tb=type, nm=name, vl=value))
+        type_ID = self.c.fetchone()
+        if type_ID:
+            type_ID = type_ID[ID]
+            
+        self.c.execute('SELECT {fk} FROM music WHERE {fk}={tid}'.format(fk=fk, tid=type_ID))
         if self.c.fetchone():
             return True
         else:
-            self.c.execute('DELETE FROM interpreter WHERE interpreter_ID = ?', (interpreter_ID['interpreter_ID'], ))
+            self.c.execute('DELETE FROM {tb} WHERE {id}={tid}'.format(tb=type, id=ID, tid=type_ID))
             self.conn.commit()
 
     def searchgenre(self, genre):
@@ -752,13 +848,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             return False
 
-    def searchartist(self,  artist):
-        """
-        check if interpreter already exists
-        """
-        self.c.execute("SELECT interpreter_name FROM interpreter WHERE interpreter_name = ?", (artist,))
-        empty = self.c.fetchone()
-        if (empty):
+    def searchAIC(self, type, value):
+        '''
+        check if AIC already exists
+        '''
+        name = type + "_name"
+        self.c.execute('SELECT {nm} FROM {tb} WHERE {nm}=?'.format(nm=name, tb=type), (value, ))
+        exist = self.c.fetchone()
+        if exist:
             return True
         else:
             return False
@@ -767,7 +864,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         save changes in file
         """
-        song = self.get_objectItems(self.songs, self.Spath)
+        song = self.songs[self.Spath].get_all()
         try:
             audio = mutagen.easyid3.EasyID3(self.Spath)
         except mutagen.id3.ID3NoHeaderError:
@@ -782,44 +879,60 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         audio["album"] = song["album"]
         audio["artist"] = song["interpreter"]
         audio["genre"] = genres
+        audio["discnumber"] = song["cd"]
+        audio["composer"] = song["composer"]
+        audio["tracknumber"] = song["track"]
+        audio["bpm"] = song["bpm"]
+        audio["albumartist"] = song["albuminterpreter"]
+        audio["year"] = song["year"]
 
         audio.save()
+
+    def checkAIC(self, type, song):
+        '''
+        check for Albuminterpreter, Interpreter, Composer (AIC)
+        '''
+        ID = type + "_ID"
+        name = type + "_name"
+        if not self.searchAIC(type, song[type]):
+            ex = (None, song[type])
+            self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
+        
+        self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (unicode(song[type]), ))
+        type_ID = self.c.fetchone()
+        if type_ID:
+            type_ID = type_ID[ID]
+        
+        return type_ID
 
     def update_db(self, object, path):
         """
         save changes in db
         """
-        song = self.get_objectItems(object, path)
-        if not self.searchartist (song['interpreter']):
-            interp = (None, song['interpreter'])
-            self.c.execute('''INSERT INTO interpreter VALUES(?,?)''', interp)
+        song = object[path].get_all()
+        interpreter_ID = self.checkAIC('interpreter', song)
+        albuminterpreter_ID = self.checkAIC('albuminterpreter', song)
+        composer_ID = self.checkAIC('composer', song)
 
-        self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(song['interpreter']), ))
-        interpreter_ID = self.c.fetchone()
-
-        ex = [song['title'], song['album'], interpreter_ID['interpreter_ID'], song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
-        self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
+        ex = [song['title'], song['album'], interpreter_ID, albuminterpreter_ID, composer_ID, song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], song['bpm'], song['cd'], song['track'], song['year'], path]
+        self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=?, bpm=?, cd=?, track=?, year=? WHERE path = ?''', ex)
         self.conn.commit()
 
         if hasattr(self, 'ointerpreter'):
-            self.interpreterIsNeeded(self.ointerpreter)
+            self.AICIsNeeded('interpreter', self.ointerpreter)
 
     def update_dball(self, object):
         """
         save all changes in db
         """
         for path in object:
-            song = self.get_objectItems(object, path)
-            if not self.searchartist (song['interpreter']):
-                interp = (None, song['interpreter'])
-                self.c.execute('''INSERT INTO interpreter VALUES(?,?)''', interp)
-                self.conn.commit()
+            song = object[path].get_all()
+            interpreter_ID = self.checkAIC('interpreter', song)
+            albuminterpreter_ID = self.checkAIC('albuminterpreter', song)
+            composer_ID = self.checkAIC('composer', song)
 
-            self.c.execute('SELECT interpreter_ID FROM interpreter WHERE interpreter_name = ?', (unicode(song['interpreter']), ))
-            interpreter_ID = self.c.fetchone()
-
-            ex = [song['title'], song['album'], interpreter_ID['interpreter_ID'], song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
-            self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
+            ex = [song['title'], song['album'], interpreter_ID, albuminterpreter_ID, composer_ID, song['comment'], song['cs'], song['timesplayed'], song['chance'], song['rating'], path]
+            self.c.execute('''UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=?, comment=?, cs =?, times_played=?, chance=?, rating=? WHERE path = ?''', ex)
         self.conn.commit()
 
     def get_volume(self):
@@ -831,12 +944,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.volume = 1
 
     def save_volume(self):
-        cfgfile = open('config.ini', 'w')
-        config = ConfigParser.ConfigParser()
-        config.add_section('player')
-        config.set('player', 'volume', self.volume)
-        config.write(cfgfile)
-        cfgfile.close()
+        if hasattr(self, 'volume'):
+            config = ConfigParser.ConfigParser()
+            config.read('config.ini')
+            config.set('player', 'volume', self.volume)
+            with open('config.ini',  'wb') as configfile:
+                config.write(configfile)
 
     def get_playlistItemWithPath(self, path):
         """
@@ -1250,9 +1363,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         path = self.get_path(index)
         path += unicode(index.data().toString())
         playlistname, songs = self.load_playlist(path)
+        paths = []
         self.playlistLineEdit.setText(playlistname['name'])
         for song in songs:
-            self.playlistAdd(song['path'], False)
+            paths.append(song['path'])
+        self.playlistAdd(paths, False)
         self.playlistTab.setCurrentIndex(1)
 
     def load_playlist(self, path):
@@ -1315,46 +1430,52 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 return
         self.playlistWidget.setRowCount(0)
         self.playlist = {}
+        paths = []
         for path in self.songs:
-            self.playlistAdd(path, False)
+            paths.append(path)
+        self.playlistAdd(paths, False)
         item = self.get_playlistItemWithPath(self.Spath)
         self.playlistWidget.setCurrentItem(item)
         self.playlistWidget.setFocus()
         self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
 
-    def playlistAdd(self, path, sort):
+    def playlistAdd(self, paths, sort):
         """
         add song in playlist
         """
-        existinplaylist = False
-        exists = False
-        path = unicode(path)
-        for row in range(self.playlistWidget.rowCount()):
-            if path == self.playlistWidget.item(row, 0).text():
-                existinplaylist = True
+        self.fileAddInDB(paths, True)
+        for path in paths:
+            exception = False
+            existinplaylist = False
+            path = unicode(path)
+            for row in range(self.playlistWidget.rowCount()):
+                if path == self.playlistWidget.item(row, 0).text():
+                    existinplaylist = True
+            
+            for excep in self.loadErrors:
+                if excep == path:
+                    exception = True
+                    break
 
-        if path in self.songs or self.searchpath(path):
-            exists = True
+            if not existinplaylist and not exception:
+                try:
+                    song = self.playlist[path].get_all()
+                    m, s = divmod(song['length'], 60)
+                    orlength = ('%02d:%02d' % (m, s))
 
-        if not existinplaylist:
-            if not exists:
-                self.fileAddInDB(list(path))
-            data, genre = self.get_dbData(path)
-            m, s = divmod(data['length'], 60)
-            orlength = ('%02d:%02d' % (m, s))
-            self.create_object(path, data, genre, True)
-
-            qpath = QTableWidgetItem(path)
-            qtitle = QTableWidgetItem(data['title'])
-            qlength = QTableWidgetItem(orlength)
-            qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
-            row = self.playlistWidget.rowCount()
-            self.playlistWidget.insertRow(row)
-            self.playlistWidget.setItem(row, 0, qpath)
-            self.playlistWidget.setItem(row, 1, qtitle)
-            self.playlistWidget.setItem(row, 2, qlength)
-            if sort:
-                self.playlistWidget.sortItems(1)
+                    qpath = QTableWidgetItem(path)
+                    qtitle = QTableWidgetItem(song['title'])
+                    qlength = QTableWidgetItem(orlength)
+                    qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
+                    row = self.playlistWidget.rowCount()
+                    self.playlistWidget.insertRow(row)
+                    self.playlistWidget.setItem(row, 0, qpath)
+                    self.playlistWidget.setItem(row, 1, qtitle)
+                    self.playlistWidget.setItem(row, 2, qlength)
+                    if sort:
+                        self.playlistWidget.sortItems(1)
+                except (KeyError, UnboundLocalError):
+                    pass
 
     def switchPlaylistTab(self):
         """
@@ -1441,8 +1562,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for song in self.playlist:
                 songs.append(song)
             random.shuffle(songs)
-            for song in songs:
-                self.playlistAdd(song, False)
+            self.playlistAdd(songs, False)
             self.playlistWidget.setFocus()
             self.playlistWidget.setCurrentCell(0, 1)
             self.create_playlist(True)
@@ -1495,15 +1615,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         play last song
         """
         if self.player.time <= 3:
-            if self.index > 0:
+            if self.paus == 5:
+                self.paus = 0
                 self.single = True
-                self.index -= 1
-                if self.RANDOMNESS:
-                    self.get_last()
-                else:
+                if self.index > 0:
+                    self.index -= 1
+                    if self.RANDOMNESS:
+                        self.get_last()
+                    else:
+                        self.get_nextsong()
+                    self.playerPlayNext()
+                    self.single = False
+                elif self.index == 0 and not self.RANDOMNESS:
+                    self.index = self.playlistWidget.rowCount()-1
                     self.get_nextsong()
-                self.playerPlayNext()
-                self.single = False
+                    self.playerPlayNext()
+                    self.single = False
         else:
             self.player.seek(self.START)
 
@@ -1716,7 +1843,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         send songinformations to dialog
         """
-        items = self.get_objectItems(self.playlist, self.Ppath)
+        items = self.playlist[self.Ppath].get_all()
         self.mdlg.set_songInfos(items['title'], items['album'], items['interpreter'], items['rating'], length, timebarrange)
 
     def mpplayclicked(self):

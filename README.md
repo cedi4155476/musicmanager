@@ -5,10 +5,16 @@ This programm is for people who likes to hear music in a random loop so that one
 ## Note
 
 This programm is not finished, so there will be some errors and it needs a lot more testing before it works like it should.
-At the moment only mp3 files are working but even some of the mp3 files arent running. I try to fix this problem.
+Some Files are crashing the programm it is still unclear why this is happening but it should be fixed in the future.
 ## Install with pip
 <pre>
 pip install music_manager
+</pre>
+
+## Use from pip
+<pre>
+from music_manager import main
+main.launch()
 </pre>
 
 ## Bug reports

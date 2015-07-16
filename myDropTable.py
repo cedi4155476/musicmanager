@@ -5,7 +5,7 @@ class MyDropTable(QTableWidget):
     """
     add drop functionality to table
     """
-    playlistInfo = pyqtSignal(str, bool)
+    playlistInfo = pyqtSignal(list, bool)
 
     def __init__(self, parent=None):
         QTableWidget.__init__(self)
@@ -20,7 +20,7 @@ class MyDropTable(QTableWidget):
             e.acceptProposedAction()
 
     def dragMoveEvent(self, e):
-        #Funktion MUSS Ueberschrieben werden
+        #Function must be
         pass
 
     def dropMimeData(self, row, column, data, action):
@@ -32,6 +32,5 @@ class MyDropTable(QTableWidget):
             for url in data.urls():
                 paths.append(url.toString()[7:])
 
-        for path in paths:
-            self.playlistInfo.emit(path, True)
+        self.playlistInfo.emit(paths, True)
         return True

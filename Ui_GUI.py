@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/GUI.ui'
 #
-# Created: Mon Jul  6 15:11:45 2015
+# Created: Thu Jul 16 13:55:50 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -125,7 +125,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7 = QtGui.QHBoxLayout()
         self.horizontalLayout_7.setObjectName(_fromUtf8("horizontalLayout_7"))
         self.filterResetButton = QtGui.QPushButton(self.frame)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.filterResetButton.sizePolicy().hasHeightForWidth())
@@ -422,14 +422,14 @@ class Ui_MainWindow(object):
         self.verticalLayout_8.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
         self.verticalLayout_8.setContentsMargins(-1, -1, -1, 0)
         self.verticalLayout_8.setObjectName(_fromUtf8("verticalLayout_8"))
-        self.volume = QtGui.QLabel(self.dockWidgetContents)
+        self.volumeLabel = QtGui.QLabel(self.dockWidgetContents)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.volume.sizePolicy().hasHeightForWidth())
-        self.volume.setSizePolicy(sizePolicy)
-        self.volume.setObjectName(_fromUtf8("volume"))
-        self.verticalLayout_8.addWidget(self.volume)
+        sizePolicy.setHeightForWidth(self.volumeLabel.sizePolicy().hasHeightForWidth())
+        self.volumeLabel.setSizePolicy(sizePolicy)
+        self.volumeLabel.setObjectName(_fromUtf8("volumeLabel"))
+        self.verticalLayout_8.addWidget(self.volumeLabel)
         self.soundSlider = QtGui.QSlider(self.dockWidgetContents)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -633,7 +633,7 @@ class Ui_MainWindow(object):
         self.musicdock.setWindowTitle(_translate("MainWindow", "Music Player", None))
         self.time.setText(_translate("MainWindow", "00:00", None))
         self.length.setText(_translate("MainWindow", "00:00", None))
-        self.volume.setText(_translate("MainWindow", "Volume", None))
+        self.volumeLabel.setText(_translate("MainWindow", "Volume", None))
         self.playlistFolderLineEdit.setPlaceholderText(_translate("MainWindow", "New subfolder name", None))
         self.playlistCreateFolderButton.setText(_translate("MainWindow", "Create Folder", None))
         self.playlistSearchButton.setText(_translate("MainWindow", "search", None))
@@ -650,7 +650,7 @@ class Ui_MainWindow(object):
         self.resetallbutton.setText(_translate("MainWindow", "Shuffle", None))
         self.playbutton.setText(_translate("MainWindow", "Playlist Random Play", None))
         self.playlistTab.setTabText(self.playlistTab.indexOf(self.playlistInfo), _translate("MainWindow", "Active Playlist", None))
-        self.menuDatei.setTitle(_translate("MainWindow", "Data", None))
+        self.menuDatei.setTitle(_translate("MainWindow", "Music Manager", None))
         self.menuInfo.setTitle(_translate("MainWindow", "Info", None))
         self.menuSong.setTitle(_translate("MainWindow", "Song", None))
         self.actionVerzeichnis_wechseln.setText(_translate("MainWindow", "Change Directory", None))
