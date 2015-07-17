@@ -1,0 +1,5 @@
+extend-diff-ignore="\.egg-info"
+extend-diff-ignore=".eric4project"
+extend-diff-ignore=".eric6project"
+extend-diff-ignore="musicdb.e4p"
+extend-diff-ignore="playlists"

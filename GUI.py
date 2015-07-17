@@ -67,7 +67,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         try:
             self.c.execute('SELECT path FROM music')
         except sqlite3.OperationalError:
-            for line in open('dbcreate.py'):
+            for line in open('dbcreate.sql'):
                 try:
                     self.c.execute(line)
                 except sqlite3.OperationalError:
@@ -581,7 +581,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         try:
             info = MP3(path)
             length = int(info.info.length)
-            if "MPEG ADTS" in type or "Audio file" in type or length:
+            if "MPEG ADTS" in type or "Audio file" in type:
                 audio = mutagen.easyid3.EasyID3(path)
                 try:
                     title = audio["title"][0]
@@ -641,17 +641,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 raise ValueError("Could not read File. Are you sure it is a music File?")
 
         except (mutagen.id3.ID3NoHeaderError):
-                title = ""
-                album = ""
-                interpreter = ""
-                comment = ""
-                genre = ["empty", ]
-                bpm = ""
-                composer = ""
-                cd = ""
-                track = ""
-                albuminterpreter = ""
-                year = ""
+            title = ""
+            album = ""
+            interpreter = ""
+            comment = ""
+            genre = ["empty", ]
+            bpm = ""
+            composer = ""
+            cd = ""
+            track = ""
+            albuminterpreter = ""
+            year = ""
 
         except HeaderNotFoundError:
             raise ValueError("Could not read File. Are you sure it is a music File?")
