@@ -10,6 +10,9 @@ with open(path.join(here, 'VERSION')) as version_file:
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+with open(path.join(here, 'FILES'), encoding='utf-8') as f:
+    pyfiles = f.read().splitlines()
+
 setup(
     name = 'music_manager', 
     version = version, 
@@ -36,11 +39,22 @@ setup(
     
     keywords='music manager',
     
+    package_data = {
+        '' : ['*.png', '*.rst', 'VERSION', 'FILES'], 
+    }, 
+    
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    
+    dependency_links = [
+            "https://github.com/downloads/AVbin/AVbin/install-avbin-linux-x86-64-v10"
+    ], 
     
     install_requires=[
         'pyglet', 
         'python-magic', 
         'mutagen', 
     ], 
+    
+    py_modules=pyfiles,
+    
 )
