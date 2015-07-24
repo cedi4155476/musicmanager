@@ -43,7 +43,7 @@ setup(
         '' : ['*.png', '*.rst', 'VERSION', 'FILES'], 
     }, 
     
-    packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    packages=find_packages(exclude=['contrib', 'docs', 'tests*', '*.pyc']),
     
     dependency_links = [
             "https://github.com/downloads/AVbin/AVbin/install-avbin-linux-x86-64-v10"

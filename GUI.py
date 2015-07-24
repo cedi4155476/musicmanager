@@ -581,7 +581,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         try:
             info = MP3(path)
             length = int(info.info.length)
-            if "MPEG ADTS" in type or "Audio file" in type:
+            if "MPEG" in type or "Audio file" in type:
                 audio = mutagen.easyid3.EasyID3(path)
                 try:
                     title = audio["title"][0]
@@ -629,7 +629,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     track = ""
 
                 try:
-                    albuminterpreter = audio["albumartist"][0]
+                    albuminterpreter = audio["albumartistsortsort"][0]
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     albuminterpreter = ""
 
@@ -760,14 +760,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         song = self.songs[self.Spath].get_all()
         row = self.tableWidget.currentRow()
-        qname = QTableWidgetItem(song['path'].split( "/")[-1])
-        qpath = QTableWidgetItem(song['path'])
-        qtitle = QTableWidgetItem(song['title'])
-        qalbum = QTableWidgetItem(song['album'])
-        qinterpreter = QTableWidgetItem(song['interpreter'])
-        qtimesplayed = QTableWidgetItem(unicode(song['timesplayed']))
-        qrating = QTableWidgetItem(unicode(song['rating']))
-        qgenres = QTableWidgetItem(', '.join(song['genre']))
+        qname = self.getValidQTWI(song['path'].split( "/")[-1])
+        qpath = self.getValidQTWI(song['path'])
+        qtitle = self.getValidQTWI(song['title'])
+        qalbum = self.getValidQTWI(song['album'])
+        qinterpreter = self.getValidQTWI(song['interpreter'])
+        qgenres = self.getValidQTWI(', '.join(song['genre']))
+        qtimesplayed = self.getValidQTWI(unicode(song['timesplayed']))
+        qrating = self.getValidQTWI(unicode(song['rating']))
 
         songs = [qpath, qname, qtitle, qalbum, qinterpreter, qgenres, qtimesplayed, qrating]
 
@@ -883,8 +883,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         audio["composer"] = song["composer"]
         audio["tracknumber"] = song["track"]
         audio["bpm"] = song["bpm"]
-        audio["albumartist"] = song["albuminterpreter"]
-        audio["year"] = song["year"]
+        audio["albumartistsort"] = song["albuminterpreter"]
+        audio["date"] = song["year"]
 
         audio.save()
 
@@ -1463,9 +1463,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     m, s = divmod(song['length'], 60)
                     orlength = ('%02d:%02d' % (m, s))
 
-                    qpath = QTableWidgetItem(path)
-                    qtitle = QTableWidgetItem(song['title'])
-                    qlength = QTableWidgetItem(orlength)
+                    qpath = self.getValidQTWI(path)
+                    if not song['title']:
+                        qtitle = self.getValidQTWI(song['path'].split( "/")[-1])
+                    else:
+                        qtitle = self.getValidQTWI(song['title'])
+                    qlength = self.getValidQTWI(orlength)
                     qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
                     row = self.playlistWidget.rowCount()
                     self.playlistWidget.insertRow(row)
