@@ -3,3 +3,4 @@ include dbcreate.sql
 include VERSION
 include DESCRIPTION.rst
 include FILES
+include main

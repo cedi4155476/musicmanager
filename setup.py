@@ -40,7 +40,7 @@ setup(
     keywords='music manager',
     
     package_data = {
-        '' : ['*.png', '*.rst', 'VERSION', 'FILES'], 
+        '' : ['*.png', '*.rst', 'VERSION', 'FILES', 'main'], 
     }, 
     
     packages=find_packages(exclude=['contrib', 'docs', 'tests*', '*.pyc']),

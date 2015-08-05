@@ -185,6 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.get_allBoxes()
                 self.update_file()
                 self.fill_row()
+                self.set_editInfos()
 
     def get_dbData(self, path):
         """
@@ -825,7 +826,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ID = type + "_ID"
         fk = type + "_FK"
         name = type + "_name"
-        self.c.execute('SELECT {id} FROM {tb} WHERE {nm}="{vl}"'.format(id=ID, tb=type, nm=name, vl=value))
+        self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (value, ))
         type_ID = self.c.fetchone()
         if type_ID:
             type_ID = type_ID[ID]
@@ -1510,6 +1511,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 menu.addAction('Playlist erstellen', self.switchPlaylistTab)
             menu.exec_(self.playlistTreeView.mapToGlobal(pos))
 
+    def set_editInfos(self):
+            items = self.songs[self.Spath].get_all()
+            self.lineEditTitle.setText(items['title'])
+            self.lineEditInterpreter.setText(items['interpreter'])
+            self.lineEditAlbum.setText(items['album'])
+            self.lineEditComment.setText(items['comment'])
+            self.spinBoxRating.setValue(int(items['rating']))
+            self.csCheckBox.setChecked(items['cs'])
+
     @pyqtSignature("QTableWidgetItem*")
     def on_tableWidget_itemDoubleClicked(self, item):
         """
@@ -1765,13 +1775,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.tableWidget.selectedItems():
             item = self.tableWidget.selectedItems()[0]
             self.Spath = unicode(self.tableWidget.item(item.row(),  0).text())
-            items = self.songs[self.Spath].get_all()
-            self.lineEditTitle.setText(items['title'])
-            self.lineEditInterpreter.setText(items['interpreter'])
-            self.lineEditAlbum.setText(items['album'])
-            self.lineEditComment.setText(items['comment'])
-            self.spinBoxRating.setValue(int(items['rating']))
-            self.csCheckBox.setChecked(items['cs'])
+            self.set_editInfos()
 
     @pyqtSignature("QModelIndex")
     def on_playlistTreeView_doubleClicked(self, index):

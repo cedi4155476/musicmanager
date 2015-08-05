@@ -1,4 +1,4 @@
-playlists
 allmusic
 files
 *.db
+!music_manager/tmp/error.log
