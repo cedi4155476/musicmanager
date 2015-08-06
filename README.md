@@ -8,6 +8,11 @@ This programm is not finished, so there will be some errors and it needs a lot m
 Some Files are crashing the programm it is still unclear why this is happening but it should be fixed in the future.
 ## Install with apt-get
 
+You'll need to install avbin to listen to music so just do:
+<pre>
+sudo apt-get install libavbin-dev
+</pre>
+
 First you need my launchpad Repository for downloading this package.
 <pre>
 sudo add-apt-repository ppa:cedric-christen/musicmanager

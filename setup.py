@@ -13,7 +13,6 @@ with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
 setup(
     name = 'music_manager', 
     version = version, 
-    distribution = 'trusty',
     description = 'Maintain and listen to your music', 
     long_description = long_description,
     
@@ -44,11 +43,10 @@ setup(
     package_data={'music_manager' : ['resources/*.png', 'tmp/error.log', 'dbcreate.sql', 'playlists/empty.txt']},
     
     dependency_links = [
-            "https://github.com/downloads/AVbin/AVbin/install-avbin-linux-x86-64-v10"
+            "https://github.com/AVbin/AVbin"
     ], 
     
     install_requires=[
-        'python',
         'pyglet', 
         'python-magic', 
         'mutagen', 
