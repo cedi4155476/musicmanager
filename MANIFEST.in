@@ -1,7 +1,7 @@
 include music_manager/resources/*.png
 include music_manager/dbcreate.sql
-include music_manager/tmp/error.log
 recursive-include music_manager *
 include VERSION
+include README
 include DESCRIPTION.rst
 include FILES
