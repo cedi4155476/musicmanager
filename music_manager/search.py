@@ -9,6 +9,10 @@ from PyQt4.QtCore import *
 
 from Ui_search import Ui_Dialog
 
+from os.path import expanduser
+HOME = expanduser("~")
+HOME += "/Documents/music_manager/"
+
 class SearchDialog(QDialog, Ui_Dialog):
     """
     search directory to edit songs
@@ -28,16 +32,16 @@ class SearchDialog(QDialog, Ui_Dialog):
     def get_config(self):
         try:
             config = ConfigParser.ConfigParser()
-            config.read('config.ini')
+            config.read(HOME + 'config.ini')
             self.lineEditPath.setText(config.get('directory', 'path'))
         except ConfigParser.NoSectionError:
             return
 
     def save_config(self):
         config = ConfigParser.ConfigParser()
-        config.read('config.ini')
+        config.read(HOME + 'config.ini')
         config.set('directory', 'path', self.PATH)
-        with open('config.ini',  'wb') as configfile:
+        with open(HOME + 'config.ini',  'wb') as configfile:
             config.write(configfile)
 
     def get_path(self):

@@ -6,16 +6,28 @@ This programm is for people who likes to hear music in a random loop so that one
 
 This programm is not finished, so there will be some errors and it needs a lot more testing before it works like it should.
 Some Files are crashing the programm it is still unclear why this is happening but it should be fixed in the future.
-## Install with pip
+## Install with apt-get
+
+First you need my launchpad Repository for downloading this package.
 <pre>
-pip install music_manager
+sudo add-apt-repository ppa:cedric-christen/musicmanager
+</pre>
+Then update your apt-get
+<pre>
+sudo apt-get update
+</pre>
+Finally install the package.
+<pre>
+sudo apt-get install python-music-manager
 </pre>
 
-## Use from pip
+Use the program with.
 <pre>
-from music_manager import main
-main.launch()
+music_manager
 </pre>
+There will be a music_manager directory in your home/documents folder with the playlists, database and error.log file.
+
+There are some libraries missing at the moment but I try to fix them as soon as possible.
 
 ## Bug reports
 

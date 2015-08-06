@@ -17,6 +17,10 @@ from musicplayer import MusicPlayer
 from mylistview import MyListView
 from Ui_GUI import Ui_MainWindow
 
+from os.path import expanduser
+HOME = expanduser("~")
+HOME += "/Documents/music_manager/"
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Das Hauptfenster wird erstellt und alle funktionen eingefügt.
@@ -31,7 +35,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         the constructor replacement so it does not crash
         """
+        self.create_home()
         self.db_connect()
+        self.checkDirectories()
         self.create_config()
         self.setupUi(self)
         self.adjust_gui()
@@ -57,11 +63,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             QApplication.quit()
 
+    def create_home(self):
+        if not os.path.exists(HOME):
+            os.makedirs(HOME)
+
+    def checkDirectories(self):
+        if not os.path.exists(HOME + 'playlists'):
+            os.makedirs(HOME + 'playlists')
+        
+        if not os.path.exists(HOME + 'tmp'):
+            os.makedirs(HOME + 'tmp')
+            open(HOME+'tmp/error.log',  'a').close()
+            
+
     def db_connect(self):
         """
         connect to the db and if it did not exist make the db and it's tables
         """
-        self.conn = sqlite3.connect('music.db')
+        self.conn = sqlite3.connect(HOME +'music.db')
         self.conn.row_factory = self.dict_factory
         self.c = self.conn.cursor()
         try:
@@ -74,8 +93,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     break
 
     def create_config(self):
-        if not os.path.isfile('config.ini'):
-            cfgfile = open('config.ini', 'w')
+        if not os.path.isfile(HOME + 'config.ini'):
+            cfgfile = open(HOME + 'config.ini', 'w')
             config = ConfigParser.ConfigParser()
             config.add_section('player')
             config.set('player', 'volume', 1)
@@ -695,7 +714,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         import logging
         logger = logging.getLogger('musicmanager')
-        hdlr = logging.FileHandler('tmp/error.log')
+        hdlr = logging.FileHandler(HOME + 'tmp/error.log')
         formatter = logging.Formatter('%(asctime)s %(message)s', "%Y-%m-%d")
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
@@ -939,7 +958,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def get_volume(self):
         try:
             config = ConfigParser.ConfigParser()
-            config.read('config.ini')
+            config.read(HOME + 'config.ini')
             self.volume = int(config.get('player', 'volume'))
         except ConfigParser.NoSectionError:
             self.volume = 1
@@ -947,9 +966,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def save_volume(self):
         if hasattr(self, 'volume'):
             config = ConfigParser.ConfigParser()
-            config.read('config.ini')
+            config.read(HOME + 'config.ini')
             config.set('player', 'volume', self.volume)
-            with open('config.ini',  'wb') as configfile:
+            with open(HOME + 'config.ini',  'wb') as configfile:
                 config.write(configfile)
 
     def get_playlistItemWithPath(self, path):
@@ -1244,7 +1263,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         filter = QStringList()
         filter.append("*.xml")
         self.model = QFileSystemModel()
-        rootpath = os.path.dirname(os.path.realpath(__file__))+ "/playlists"
+        rootpath = HOME + "playlists"
         self.model.setRootPath(rootpath)
         self.model.setNameFilters(filter)
         self.playlistTreeView.setModel(self.model)
@@ -1304,7 +1323,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         get path of selected file or folder
         """
         repath = []
-        path = ""
+        path = HOME
         if self.model.isDir(index):
             repath.append(unicode(index.data().toString()))
         while True:
@@ -1399,7 +1418,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.playlistTreeView.selectedIndexes():
             playlistname = self.get_path(self.playlistTreeView.selectedIndexes()[0])
         else:
-            playlistname = "playlists/"
+            playlistname = HOME + "playlists/"
         playlistname +=  unicode(self.playlistLineEdit.text()) + ".xml"
 
         if not self.playlistLineEdit.text() and not shuffle:

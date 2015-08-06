@@ -1,4 +1,6 @@
 allmusic
 files
+deb_dist
+*.gz
 *.db
 !music_manager/tmp/error.log

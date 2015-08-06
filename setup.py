@@ -10,12 +10,10 @@ with open(path.join(here, 'VERSION')) as version_file:
 with open(path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
-with open(path.join(here, 'FILES'), encoding='utf-8') as f:
-    pyfiles = f.read().splitlines()
-
 setup(
     name = 'music_manager', 
     version = version, 
+    distribution = 'trusty',
     description = 'Maintain and listen to your music', 
     long_description = long_description,
     
@@ -37,24 +35,24 @@ setup(
         'Programming Language :: Python :: 2.7',
     ], 
     
+    scripts=['bin/music_manager'],
+    
     keywords='music manager',
     
-    package_data = {
-        '' : ['*.png', '*.rst', 'VERSION', 'FILES', 'main'], 
-    }, 
-    
-    packages=find_packages(exclude=['contrib', 'docs', 'tests*', '*.pyc']),
+    package_dir={'music_manager' : 'music_manager'},
+    packages=["music_manager"],
+    package_data={'music_manager' : ['resources/*.png', 'tmp/error.log', 'dbcreate.sql', 'playlists/empty.txt']},
     
     dependency_links = [
             "https://github.com/downloads/AVbin/AVbin/install-avbin-linux-x86-64-v10"
     ], 
     
     install_requires=[
+        'python',
         'pyglet', 
         'python-magic', 
         'mutagen', 
     ], 
     
-    py_modules=pyfiles,
     
 )
