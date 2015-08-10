@@ -65,10 +65,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QApplication.quit()
 
     def create_home(self):
+        """
+        Create, if not exist, the home folder: music_manager
+        """
         if not os.path.exists(HOME):
             os.makedirs(HOME)
 
     def checkDirectories(self):
+        """
+        Create directories in home if not exist
+        """
         if not os.path.exists(HOME + 'playlists'):
             os.makedirs(HOME + 'playlists')
         
@@ -94,6 +100,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     break
 
     def create_config(self):
+        """
+        Create the config file if it doesn't exist
+        """
         if not os.path.isfile(HOME + 'config.ini'):
             cfgfile = open(HOME + 'config.ini', 'w')
             config = ConfigParser.ConfigParser()
@@ -836,6 +845,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tableWidget.setItem(row, 7, qrating)
 
     def getValidQTWI(self, value):
+        """
+        Make a valid qtablewidgetitem so it doesn't crash if it's empty
+        """
         if value:
             return QTableWidgetItem(value)
         else:
@@ -970,6 +982,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.conn.commit()
 
     def get_volume(self):
+        """
+        Get the last used volume
+        """
         try:
             config = ConfigParser.ConfigParser()
             config.read(HOME + 'config.ini')
@@ -978,6 +993,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.volume = 1
 
     def save_volume(self):
+        """
+        Save the used volume
+        """
         if hasattr(self, 'volume'):
             config = ConfigParser.ConfigParser()
             config.read(HOME + 'config.ini')
@@ -1068,10 +1086,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.on_nextbutton_clicked()
 
     def playPlayer(self):
+        """
+        change the tray icon and start playing
+        """
         self.trayicon.setIcon(QIcon('resources/trayiconplay.png'))
         self.player.play()
 
     def pausePlayer(self):
+        """
+        change the tray icon and pause the player
+        """
         self.trayicon.setIcon(QIcon('resources/trayiconpause.png'))
         self.player.pause()
 
@@ -1555,13 +1579,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             menu.exec_(self.playlistTreeView.mapToGlobal(pos))
 
     def set_editInfos(self):
-            items = self.songs[self.Spath].get_all()
-            self.lineEditTitle.setText(items['title'])
-            self.lineEditInterpreter.setText(items['interpreter'])
-            self.lineEditAlbum.setText(items['album'])
-            self.lineEditComment.setText(items['comment'])
-            self.spinBoxRating.setValue(int(items['rating']))
-            self.csCheckBox.setChecked(items['cs'])
+        """
+        Create the infos on the left
+        """
+        items = self.songs[self.Spath].get_all()
+        self.lineEditTitle.setText(items['title'])
+        self.lineEditInterpreter.setText(items['interpreter'])
+        self.lineEditAlbum.setText(items['album'])
+        self.lineEditComment.setText(items['comment'])
+        self.spinBoxRating.setValue(int(items['rating']))
+        self.csCheckBox.setChecked(items['cs'])
 
     @pyqtSignature("QTableWidgetItem*")
     def on_tableWidget_itemDoubleClicked(self, item):
@@ -1644,7 +1671,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @pyqtSignature("")
     def on_playbutton_2_clicked(self):
         """
-        
+        start playing
         """
         if not self.player.playing:
             self.playPlayer()
