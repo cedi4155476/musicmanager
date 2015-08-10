@@ -12,3 +12,5 @@ def launch():
     mw.show()
     QTimer.singleShot(0,  lambda: mw.start())
     app.exec_()
+
+launch()

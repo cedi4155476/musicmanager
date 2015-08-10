@@ -756,8 +756,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 pass
             i+=1
             self.load.progressBar.setValue(i)
-            if i >= len(paths):
-                self.load.close()
+        if i >= len(paths):
+            self.load.close()
         logger.removeHandler(hdlr)
         self.conn.commit()
 
