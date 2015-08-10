@@ -293,56 +293,49 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         creates the checkboxes for filtering with genres
         """
-        i=0
-        self.checkBox = QCheckBox(self.genreWidget)
-        self.checkBox.setLayoutDirection(Qt.LeftToRight)
-        self.checkBox.setObjectName('cs')
-        self.genreLayout.setWidget(i, 0, self.checkBox)
-        self.checkBox.setText('cs')
-        self.checkBox.stateChanged.connect(self.checkCheckboxes)
-        self.checkboxes.append(self.checkBox)
-        i = 1
+        checkBox = QCheckBox(self.genreWidget)
+        checkBox.setLayoutDirection(Qt.LeftToRight)
+        checkBox.setObjectName('cs')
+        self.genreLayout.addWidget(checkBox)
+        checkBox.setText('cs')
+        checkBox.stateChanged.connect(self.checkCheckboxes)
+        self.checkboxes.append(checkBox)
         for genre in self.fgenres:
-            self.checkBox = QCheckBox(self.genreWidget)
-            self.checkBox.setLayoutDirection(Qt.LeftToRight)
-            self.checkBox.setObjectName(genre)
-            self.genreLayout.setWidget(i, 0, self.checkBox)
-            self.checkBox.setText(genre)
-            self.checkBox.stateChanged.connect(self.checkCheckboxes)
-            self.checkboxes.append(self.checkBox)
-            i += 1
+            checkBox = QCheckBox(self.genreWidget)
+            checkBox.setLayoutDirection(Qt.LeftToRight)
+            checkBox.setObjectName(genre)
+            self.genreLayout.addWidget(checkBox)
+            checkBox.setText(genre)
+            checkBox.stateChanged.connect(self.checkCheckboxes)
+            self.checkboxes.append(checkBox)
 
     def get_interpreterBoxes(self):
         """
         creates the checkboxes for filtering with interpreters
         """
-        i=0
         for interpreter in self.finterpreters:
             if interpreter:
-                self.checkBox = QCheckBox(self.interpreterWidget)
-                self.checkBox.setLayoutDirection(Qt.LeftToRight)
-                self.checkBox.setObjectName(interpreter)
-                self.interpreterLayout.setWidget(i, 0, self.checkBox)
-                self.checkBox.setText(interpreter)
-                self.checkBox.stateChanged.connect(self.checkCheckboxes)
-                self.checkboxes.append(self.checkBox)
-                i += 1
+                checkBox = QCheckBox(self.interpreterWidget)
+                checkBox.setLayoutDirection(Qt.LeftToRight)
+                checkBox.setObjectName(interpreter)
+                self.interpreterLayout.addWidget(checkBox)
+                checkBox.setText(interpreter)
+                checkBox.stateChanged.connect(self.checkCheckboxes)
+                self.checkboxes.append(checkBox)
 
     def get_albumBoxes(self):
         """
         creates the checkboxes for filtering with albums
         """
-        i=0
         for album in self.falbums:
             if album:
-                self.checkBox = QCheckBox(self.albumWidget)
-                self.checkBox.setLayoutDirection(Qt.LeftToRight)
-                self.checkBox.setObjectName(album)
-                self.albumLayout.setWidget(i, 0, self.checkBox)
-                self.checkBox.setText(album)
-                self.checkBox.stateChanged.connect(self.checkCheckboxes)
-                self.checkboxes.append(self.checkBox)
-                i += 1
+                checkBox = QCheckBox(self.albumWidget)
+                checkBox.setLayoutDirection(Qt.LeftToRight)
+                checkBox.setObjectName(album)
+                checkBox.setText(album)
+                self.albumLayout.addWidget(checkBox)
+                checkBox.stateChanged.connect(self.checkCheckboxes)
+                self.checkboxes.append(checkBox)
 
     def get_allBoxes(self):
         """
@@ -1718,8 +1711,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.songs = {}
             for checkbox in self.checkboxes:
                 self.genreLayout.removeWidget(checkbox)
+                self.albumLayout.removeWidget(checkbox)
+                self.interpreterLayout.removeWidget(checkbox)
                 checkbox.hide()
-            self.checkboxes 
+            self.checkboxes = []
             self.currentDir = self.dlg.get_currentdir()
             self.files = self.dlg.get_files()
             self.make_Table()
