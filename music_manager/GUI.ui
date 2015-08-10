@@ -374,7 +374,11 @@
                      <verstretch>0</verstretch>
                     </sizepolicy>
                    </property>
-                   <layout class="QVBoxLayout" name="interpreterLayout"/>
+                   <layout class="QVBoxLayout" name="interpreterLayout">
+                    <property name="sizeConstraint">
+                     <enum>QLayout::SetDefaultConstraint</enum>
+                    </property>
+                   </layout>
                   </widget>
                  </widget>
                 </item>

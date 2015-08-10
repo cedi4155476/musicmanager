@@ -53,6 +53,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.files = self.dlg.get_files()
             self.player= pyglet.media.Player()
             self.checkboxes = []
+            self.filtersongs = []
             self.songs = {}
             self.playlist = {}
             self.info = []
@@ -173,6 +174,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.player= pyglet.media.Player()
         self.mdlg = MusicPlayer()
         self.songs = {}
+        self.filtersongs = []
         self.info = []
         self.loadErrors = []
         self.trayicon.setIcon(QIcon('resources/trayicon.png'))
@@ -293,6 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         creates the checkboxes for filtering with genres
         """
+        i = 1
         checkBox = QCheckBox(self.genreWidget)
         checkBox.setLayoutDirection(Qt.LeftToRight)
         checkBox.setObjectName('cs')
@@ -308,11 +311,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             checkBox.setText(genre)
             checkBox.stateChanged.connect(self.checkCheckboxes)
             self.checkboxes.append(checkBox)
+            i += 1
+
+        if i < 20:
+            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.genreLayout.addSpacerItem(spacerItem)
 
     def get_interpreterBoxes(self):
         """
         creates the checkboxes for filtering with interpreters
         """
+        i = 0
         for interpreter in self.finterpreters:
             if interpreter:
                 checkBox = QCheckBox(self.interpreterWidget)
@@ -322,11 +331,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 checkBox.setText(interpreter)
                 checkBox.stateChanged.connect(self.checkCheckboxes)
                 self.checkboxes.append(checkBox)
+                i += 1
+
+        if i < 20:
+            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.interpreterLayout.addSpacerItem(spacerItem)
 
     def get_albumBoxes(self):
         """
         creates the checkboxes for filtering with albums
         """
+        i = 0
         for album in self.falbums:
             if album:
                 checkBox = QCheckBox(self.albumWidget)
@@ -336,6 +351,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.albumLayout.addWidget(checkBox)
                 checkBox.stateChanged.connect(self.checkCheckboxes)
                 self.checkboxes.append(checkBox)
+                i += 1
+
+        if i < 20:
+            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.albumLayout.addSpacerItem(spacerItem)
 
     def get_allBoxes(self):
         """
@@ -501,15 +521,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.tableWidget.setRowCount(0)
         if self.interpreterfiltered:
-            pastes = self.interpreterfiltersongs
+            self.filtersongs = self.interpreterfiltersongs
 
         elif self.albumfiltered:
-            pastes = self.albumfiltersongs
+            self.filtersongs = self.albumfiltersongs
 
         else:
-            pastes = self.genrefiltersongs
+            self.filtersongs = self.genrefiltersongs
 
-        for paste in pastes:
+        for paste in self.filtersongs:
             self.add_line(paste.get_path())
 
     def genrefactory(self, path, genres):
@@ -757,6 +777,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if len(self.loadErrors) > 0:
             errorBox = QMessageBox(0, "loading Error", str(len(self.loadErrors)) + " files failed to load \n Watch out for special character\n More infos about the files in tmp/error.log file")
             errorBox.exec_()
+            self.loadErrors = []
 
     def fill_Table(self):
         """
@@ -1446,7 +1467,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistWidget.setRowCount(0)
         self.playlist = {}
         paths = []
-        for path in self.songs:
+        if self.filtersongs:
+            songs = []
+            for song in self.filtersongs:
+                songs.append(song.get_path())
+            
+        else:
+            songs = self.songs
+
+        for path in songs:
             paths.append(path)
         self.playlistAdd(paths, False)
         item = self.get_playlistItemWithPath(self.Spath)

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/GUI.ui'
 #
-# Created: Mon Aug 10 13:47:30 2015
+# Created: Mon Aug 10 14:14:22 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -249,6 +249,7 @@ class Ui_MainWindow(object):
         self.interpreterWidget.setSizePolicy(sizePolicy)
         self.interpreterWidget.setObjectName(_fromUtf8("interpreterWidget"))
         self.interpreterLayout = QtGui.QVBoxLayout(self.interpreterWidget)
+        self.interpreterLayout.setSizeConstraint(QtGui.QLayout.SetDefaultConstraint)
         self.interpreterLayout.setObjectName(_fromUtf8("interpreterLayout"))
         self.scrollInterpreter.setWidget(self.interpreterWidget)
         self.gridLayout_9.addWidget(self.scrollInterpreter, 0, 0, 1, 1)

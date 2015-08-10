@@ -71,7 +71,11 @@ class SearchDialog(QDialog, Ui_Dialog):
         """
         search for a directory
         """
-        self.lineEditPath.setText(QFileDialog.getExistingDirectory())
+        if self.lineEditPath.text():
+            start = self.lineEditPath.text()
+        else:
+            start = expanduser("~")
+        self.lineEditPath.setText(QFileDialog.getExistingDirectory(self, "Choose directory", start))
 
     @pyqtSignature("")
     def on_buttonBox_rejected(self):
