@@ -32,8 +32,6 @@ music_manager
 </pre>
 There will be a music_manager directory in your home/documents folder with the playlists, database and error.log file.
 
-There are some libraries missing at the moment but I try to fix them as soon as possible.
-
 ## Bug reports
 
 Please use the "issues" tool of GitHub to report bugs and errors.
