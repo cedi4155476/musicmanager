@@ -465,7 +465,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         filter for album
         """
         self.albumfiltered = True
-        if self.genrefiltersongs:
+        if self.genrefiltersongs or self.genrefiltered:
             songs = self.genrefiltersongs
         else:
             songs = self.filtersongs
@@ -485,9 +485,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         filter for interpreter
         """
         self.interpreterfiltered= True
-        if self.albumfiltersongs:
+        if self.albumfiltersongs or self.albumfiltered:
             songs = self.albumfiltersongs
-        elif self.genrefiltersongs:
+        elif self.genrefiltersongs or self.genrefiltered:
             songs = self.genrefiltersongs
         else:
             songs = self.filtersongs
@@ -1161,7 +1161,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.player.playing:
             if self.playing:
                 self.playPlayer()
-                self.playing = False
+                self.playing = True
 
     def progressMovement(self, percent):
         """
@@ -1234,7 +1234,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.musicframe.setVisible(True)
             self.index = self.playlistWidget.currentRow()
             self.paus = 0
-            self.playing = False
+            self.playing = True
             self.single = False
             self.loop = QTimer()
             self.loop.timeout.connect(self.timeout)
@@ -1250,11 +1250,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif self.paus >= 5:
             self.paus = 0
             self.single = True
+            self.playing = True
             self.index = self.playlistWidget.currentRow()
             self.get_nextsong()
             self.playerPlayNext()
             self.single = False
             self.playPlayer()
+        self.playpausebutton.setIcon(QIcon('resources/pause.png'))
 
     def create_tree(self):
         """
