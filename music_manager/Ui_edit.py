@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/edit.ui'
+# Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/edit.ui'
 #
-# Created: Thu Jul  9 11:59:31 2015
+# Created: Tue Aug 11 10:30:49 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -79,6 +79,7 @@ class Ui_Edit(object):
         self.label_11.setObjectName(_fromUtf8("label_11"))
         self.horizontalLayout_2.addWidget(self.label_11)
         self.bpmLE = QtGui.QLineEdit(Edit)
+        self.bpmLE.setEnabled(True)
         self.bpmLE.setObjectName(_fromUtf8("bpmLE"))
         self.horizontalLayout_2.addWidget(self.bpmLE)
         self.verticalLayout_8.addLayout(self.horizontalLayout_2)
@@ -103,6 +104,7 @@ class Ui_Edit(object):
         self.horizontalLayout_5 = QtGui.QHBoxLayout()
         self.horizontalLayout_5.setObjectName(_fromUtf8("horizontalLayout_5"))
         self.albuminterpreterLE = QtGui.QLineEdit(Edit)
+        self.albuminterpreterLE.setEnabled(True)
         self.albuminterpreterLE.setObjectName(_fromUtf8("albuminterpreterLE"))
         self.horizontalLayout_5.addWidget(self.albuminterpreterLE)
         self.verticalLayout_8.addLayout(self.horizontalLayout_5)
@@ -115,16 +117,15 @@ class Ui_Edit(object):
         self.horizontalLayout_11 = QtGui.QHBoxLayout()
         self.horizontalLayout_11.setSpacing(-1)
         self.horizontalLayout_11.setObjectName(_fromUtf8("horizontalLayout_11"))
-        self.genreLE = QtGui.QLineEdit(Edit)
-        self.genreLE.setObjectName(_fromUtf8("genreLE"))
-        self.horizontalLayout_11.addWidget(self.genreLE)
+        self.editGenreButton = QtGui.QPushButton(Edit)
+        self.editGenreButton.setObjectName(_fromUtf8("editGenreButton"))
+        self.horizontalLayout_11.addWidget(self.editGenreButton)
         self.label_7 = QtGui.QLabel(Edit)
         self.label_7.setObjectName(_fromUtf8("label_7"))
         self.horizontalLayout_11.addWidget(self.label_7)
         self.yearLE = QtGui.QLineEdit(Edit)
         self.yearLE.setObjectName(_fromUtf8("yearLE"))
         self.horizontalLayout_11.addWidget(self.yearLE)
-        self.horizontalLayout_11.setStretch(0, 2)
         self.verticalLayout_8.addLayout(self.horizontalLayout_11)
         self.horizontalLayout_15.addLayout(self.verticalLayout_8)
         self.verticalLayout.addLayout(self.horizontalLayout_15)
@@ -155,6 +156,7 @@ class Ui_Edit(object):
         self.label_6.setText(_translate("Edit", "Genre", None))
         self.label_10.setText(_translate("Edit", "CD", None))
         self.label_11.setText(_translate("Edit", "BPM", None))
+        self.editGenreButton.setText(_translate("Edit", "Edit Genres", None))
         self.label_7.setText(_translate("Edit", "Year", None))
         self.label_8.setText(_translate("Edit", "Comment:", None))
 

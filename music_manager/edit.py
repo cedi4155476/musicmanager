@@ -4,8 +4,9 @@
 Module implementing Edit.
 """
 
-from PyQt4.QtCore import pyqtSignature, QString
+from PyQt4.QtCore import pyqtSignature, QString, Qt
 from PyQt4.QtGui import QDialog
+from genre import Genre
 
 from Ui_edit import Ui_Edit
 
@@ -14,17 +15,21 @@ class Edit(QDialog, Ui_Edit):
     """
     Class documentation goes here.
     """
-    def __init__(self, song, parent=None):
+    def __init__(self, c, conn, path, song, parent=None):
         """
-        Constructor
-        
-        @param parent reference to the parent widget (QWidget)
+        Set all LineEdits if they already exist
         """
         QDialog.__init__(self, parent)
         self.setupUi(self)
         self.song = song
         infos = self.song.get_all()
         
+        self.c = c
+        self.conn = conn
+        self.path = path
+
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+
         self.trackLE.setText(self.getValidString(infos['track']))
         self.cdLE.setText(self.getValidString(infos['cd']))
         self.bpmLE.setText(self.getValidString(infos['bpm']))
@@ -33,7 +38,6 @@ class Edit(QDialog, Ui_Edit):
         self.composerLE.setText(self.getValidString(infos['composer']))
         self.albuminterpreterLE.setText(self.getValidString(infos['albuminterpreter']))
         self.albumLE.setText(self.getValidString(infos['album']))
-        self.genreLE.setText(self.getValidString(','.join(infos['genre'])))
         self.yearLE.setText(self.getValidString(infos['year']))
         self.commentTE.setText(self.getValidString(infos['comment']))
 
@@ -42,7 +46,7 @@ class Edit(QDialog, Ui_Edit):
 
     def getValidString(self,  value):
         if value:
-            return QString(value)
+            return QString(unicode(value))
         else:
             return QString()
 
@@ -55,3 +59,11 @@ class Edit(QDialog, Ui_Edit):
             self.accept()
         else:
             self.reject()
+    
+    @pyqtSignature("")
+    def on_editGenreButton_clicked(self):
+        """
+        Slot documentation goes here.
+        """
+        self.gdlg = Genre(self.c, self.conn, self.path)
+        self.gdlg.exec_()

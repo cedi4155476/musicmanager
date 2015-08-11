@@ -202,9 +202,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         more edit varieties
         """
         if hasattr(self, 'Spath'):
-            edit = Edit(self.songs[self.Spath])
+            edit = Edit(self.c, self.conn, self.Spath, self.songs[self.Spath])
             ret = edit.exec_()
             if ret == QDialog.Accepted:
+                self.conn.commit()
                 self.ointerpreter = self.songs[self.Spath].get_interpreter()
                 self.oalbuminterpreter = self.songs[self.Spath].get_albuminterpreter()
                 self.ocomposer = self.songs[self.Spath].get_composer()
@@ -212,10 +213,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 self.songs[self.Spath].updateInfos(track, cd, bpm, title, interpreter, composer, albuminterpreter, album, year, comment)
                 self.update_db(self.songs, self.Spath)
+                del self.songs[self.Spath]
+                data, genre = self.get_dbData(self.Spath)
+                self.create_object(self.Spath, data, genre, False)
                 self.get_allBoxes()
                 self.update_file()
                 self.fill_row()
                 self.set_editInfos()
+            else:
+                self.conn.rollback()
 
     def get_dbData(self, path):
         """
@@ -323,8 +329,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             i += 1
 
         if i < 20:
-            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-            self.genreLayout.addSpacerItem(spacerItem)
+            self.gspacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.genreLayout.addSpacerItem(self.gspacerItem)
 
     def get_interpreterBoxes(self):
         """
@@ -343,8 +349,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 i += 1
 
         if i < 20:
-            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-            self.interpreterLayout.addSpacerItem(spacerItem)
+            self.ispacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.interpreterLayout.addSpacerItem(self.ispacerItem)
 
     def get_albumBoxes(self):
         """
@@ -363,8 +369,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 i += 1
 
         if i < 20:
-            spacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-            self.albumLayout.addSpacerItem(spacerItem)
+            self.aspacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
+            self.albumLayout.addSpacerItem(self.aspacerItem)
 
     def get_allBoxes(self):
         """
@@ -375,6 +381,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.albumLayout.removeWidget(checkbox)
             self.interpreterLayout.removeWidget(checkbox)
             checkbox.hide()
+        
+        if hasattr(self, "aspacerItem"):
+            self.albumLayout.removeItem(self.aspacerItem)
+        if hasattr(self, "gspacerItem"):
+            self.genreLayout.removeItem(self.gspacerItem)
+        if hasattr(self, "ispacerItem"):
+            self.interpreterLayout.removeItem(self.ispacerItem)
+
         self.checkboxes = []
 
         self.get_fileGenres()
@@ -650,10 +664,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     comment = ""
 
-                try:
-                    bpm = audio["bpm"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    bpm = ""
+#                try:
+#                    bpm = audio["bpm"][0]
+#                except (mutagen.id3.ID3NoHeaderError, KeyError):
+#                    bpm = ""
 
                 try:
                     composer = audio["composer"][0]
@@ -670,10 +684,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 except (mutagen.id3.ID3NoHeaderError, KeyError):
                     track = ""
 
-                try:
-                    albuminterpreter = audio["albumartistsortsort"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    albuminterpreter = ""
+#                try:
+#                    albuminterpreter = audio["albumartistsortsort"][0]
+#                except (mutagen.id3.ID3NoHeaderError, KeyError):
+#                    albuminterpreter = ""
 
                 try:
                     year = audio["date"][0]
@@ -688,17 +702,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             interpreter = ""
             comment = ""
             genre = ["empty", ]
-            bpm = ""
+#            bpm = ""
             composer = ""
             cd = ""
             track = ""
-            albuminterpreter = ""
+#            albuminterpreter = ""
             year = ""
 
         except HeaderNotFoundError:
             raise ValueError("Could not read File. Are you sure it is a music File?")
 
-        return title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year
+#        return title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year
+        return title, album, interpreter, comment, genre, length, composer, cd, track, year
 
     def addAIC(self, type, value):
         '''
@@ -719,15 +734,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             type_ID = type_ID[ID]
         return type_ID
 
-    def addMusic(self, path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year):
+#    def addMusic(self, path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year):
+    def addMusic(self, path, title, album, interpreter, comment, genre, length, composer, cd, track, year):
         """
         add song to db
         """
         interpreter_ID = self.AICID('interpreter', interpreter)
-        albuminterpreter_ID = self.AICID('albuminterpreter', albuminterpreter)
+#        albuminterpreter_ID = self.AICID('albuminterpreter', albuminterpreter)
         composer_ID = self.AICID('composer', composer)
 
-        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, albuminterpreter_ID, composer_ID, bpm, track, cd)
+#        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, albuminterpreter_ID, composer_ID, bpm, track, cd)
+        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, "", composer_ID, "", track, cd)
         self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', inserts)
 
     def fileAddInDB(self, paths, playlist):
@@ -752,22 +769,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for path in paths:
             path = unicode(path)
             try:
-                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
+#                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
+                title, album, interpreter, comment, genre, length, composer, cd, track, year = self.getData(path)
                 if not self.searchpath(path):
                     if (not self.searchAIC('interpreter', interpreter)):
                         self.addAIC('interpreter', interpreter)
-                    if (not self.searchAIC('albuminterpreter', albuminterpreter)):
-                        self.addAIC('albuminterpreter', albuminterpreter)
+#                    if (not self.searchAIC('albuminterpreter', albuminterpreter)):
+#                        self.addAIC('albuminterpreter', albuminterpreter)
                     if (not self.searchAIC('composer', composer)):
                         self.addAIC('composer', composer)
                     self.genrefactory(path, genre)
-                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
+#                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
+                    self.addMusic(path, title, album, interpreter, comment, genre, length, composer, cd, track, year)
                 else:
                     interpreter_ID = self.testAIC(path, 'interpreter', interpreter)
-                    albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
+#                    albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
                     composer_ID = self.testAIC(path, 'composer', composer)
-                    inserts = (title, album, interpreter_ID, albuminterpreter_ID, composer_ID, path)
-                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=? WHERE path=?', inserts)
+#                    inserts = (title, album, interpreter_ID, albuminterpreter_ID, composer_ID, path)
+                    inserts = (title, album, interpreter_ID, composer_ID, path)
+#                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=? WHERE path=?', inserts)
+                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, composer_FK=? WHERE path=?', inserts)
             except ValueError, e:
                 logger.warning("failed to load: %s\tError Message: %s" % (path, e))
                 self.loadErrors.append(path)
@@ -928,8 +949,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         audio["discnumber"] = song["cd"]
         audio["composer"] = song["composer"]
         audio["tracknumber"] = song["track"]
-        audio["bpm"] = song["bpm"]
-        audio["albumartistsort"] = song["albuminterpreter"]
+#        audio["bpm"] = song["bpm"]
+#        audio["albumartistsort"] = song["albuminterpreter"]
         audio["date"] = song["year"]
 
         audio.save()
@@ -1604,6 +1625,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         change genres for selected song
         """
         if hasattr(self, 'Spath'):
+            self.conn.commit()
             del self.songs[self.Spath]
             self.gdlg = Genre(self.c, self.conn, self.Spath)
             self.gdlg.exec_()

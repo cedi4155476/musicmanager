@@ -13,4 +13,5 @@ def launch():
     QTimer.singleShot(0,  lambda: mw.start())
     app.exec_()
 
-launch()
+if __name__ == "__main__":
+    launch()

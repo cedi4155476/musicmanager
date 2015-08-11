@@ -115,7 +115,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="bpmLE"/>
+          <widget class="QLineEdit" name="bpmLE">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -143,7 +147,11 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QLineEdit" name="albuminterpreterLE"/>
+          <widget class="QLineEdit" name="albuminterpreterLE">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -155,12 +163,16 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_11" stretch="2,0,0">
+        <layout class="QHBoxLayout" name="horizontalLayout_11" stretch="0,0,0">
          <property name="spacing">
           <number>-1</number>
          </property>
          <item>
-          <widget class="QLineEdit" name="genreLE"/>
+          <widget class="QPushButton" name="editGenreButton">
+           <property name="text">
+            <string>Edit Genres</string>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_7">

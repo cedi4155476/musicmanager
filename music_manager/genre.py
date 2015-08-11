@@ -99,11 +99,9 @@ class Genre(QDialog, Ui_genre):
             delgenreID = self.c.fetchone()['genre_ID']
             delete = (self.path, delgenreID)
             self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
-            self.conn.commit()
 
             if not self.genreIsNeeded(currentText):
                 self.c.execute('DELETE FROM genre WHERE genre_name = ?', (currentText, ))
-                self.conn.commit()
                 self.comboboxdel.removeItem(self.comboboxdel.currentIndex())
             else:
                 self.comboboxadd.addItem(QString(currentText))
@@ -114,7 +112,6 @@ class Genre(QDialog, Ui_genre):
                 genre_ID = self.c.fetchone()['genre_ID']
                 inserts = (self.path, genre_ID)
                 self.c.execute('INSERT INTO music_genre VALUES(?,?)', inserts)
-                self.conn.commit()
 
     @pyqtSignature("")
     def on_buttonadd_clicked(self):
@@ -127,23 +124,22 @@ class Genre(QDialog, Ui_genre):
                 delgenreID = self.c.fetchone()['genre_ID']
                 delete = (self.path, delgenreID)
                 self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
-                self.conn.commit()
 
             currentText = unicode(self.comboboxadd.currentText())
             if not self.genreExists(currentText):
                 genreadd = (None, currentText)
                 self.c.execute('''INSERT INTO genre VALUES (?,?) ''',  genreadd)
-                self.conn.commit()
 
             if self.comboboxdel.findText(currentText) < 0:
                 self.c.execute('SELECT genre_ID from genre WHERE genre_name = ?', (currentText, ))
                 genre_ID = self.c.fetchone()['genre_ID']
                 inserts = (self.path, genre_ID)
                 self.c.execute('INSERT INTO music_genre VALUES(?,?)', inserts)
-                self.conn.commit()
                 self.comboboxdel.addItem(currentText)
+                index = self.comboboxadd.findText(currentText)
+                if index >= 0:
+                    self.comboboxadd.removeItem(index)
                 self.comboboxadd.clearEditText()
-                self.comboboxadd.removeItem(self.comboboxadd.currentIndex())
 
     @pyqtSignature("")
     def on_buttonfinish_clicked(self):
