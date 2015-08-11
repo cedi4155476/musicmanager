@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/edit.ui'
 #
-# Created: Tue Aug 11 10:30:49 2015
+# Created: Tue Aug 11 11:27:30 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!

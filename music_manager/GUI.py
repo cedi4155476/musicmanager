@@ -63,6 +63,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.create_tree()
         else:
             QApplication.quit()
+        self.tableWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tableWidget.customContextMenuRequested.connect(self.tableWidgetContextMenu)
 
     def create_home(self):
         """
@@ -222,6 +224,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.set_editInfos()
             else:
                 self.conn.rollback()
+
+    def contextEditSong(self):
+        self.Spath = unicode(self.tableWidget.item(self.contextindex.row(), 0).text())
+        self.editSong()
 
     def get_dbData(self, path):
         """
@@ -1598,6 +1604,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.model.isDir(index):
                 menu.addAction('Playlist erstellen', self.switchPlaylistTab)
             menu.exec_(self.playlistTreeView.mapToGlobal(pos))
+
+    def tableWidgetContextMenu(self, pos):
+        """
+        create context menu for playlist tree
+        """
+        self.contextindex = self.tableWidget.indexAt(pos)
+        if self.contextindex.isValid():
+            menu = QMenu(self)
+            menu.addAction('Edit', self.contextEditSong)
+            menu.exec_(self.tableWidget.mapToGlobal(pos))
 
     def set_editInfos(self):
         """

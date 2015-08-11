@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/cch/Documents/python/music manager/search.ui'
+# Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/search.ui'
 #
-# Created: Mon Jul  6 15:10:43 2015
+# Created: Tue Aug 11 11:27:32 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
