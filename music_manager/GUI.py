@@ -656,10 +656,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             except (mutagen.id3.ID3NoHeaderError, KeyError):
                 comment = ""
 
-#                try:
-#                    bpm = audio["bpm"][0]
-#                except (mutagen.id3.ID3NoHeaderError, KeyError):
-#                    bpm = ""
+                try:
+                    bpm = audio["bpm"][0]
+                except (mutagen.id3.ID3NoHeaderError, KeyError):
+                    bpm = ""
 
             try:
                 composer = audio["composer"][0]
@@ -692,7 +692,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             interpreter = ""
             comment = ""
             genre = ["empty", ]
-#            bpm = ""
+            bpm = ""
             composer = ""
             cd = ""
             track = ""
@@ -703,7 +703,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             raise ValueError("Could not read File. Are you sure it is a music File?")
 
 #        return title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year
-        return title, album, interpreter, comment, genre, length, composer, cd, track, year
+        return title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year
 
     def addAIC(self, type, value):
         '''
@@ -725,7 +725,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return type_ID
 
 #    def addMusic(self, path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year):
-    def addMusic(self, path, title, album, interpreter, comment, genre, length, composer, cd, track, year):
+    def addMusic(self, path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year):
         """
         add song to db
         """
@@ -734,7 +734,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         composer_ID = self.AICID('composer', composer)
 
 #        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, albuminterpreter_ID, composer_ID, bpm, track, cd)
-        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, "", composer_ID, "", track, cd)
+        inserts = (path, title, album, interpreter_ID, comment, 0, length, 0.5, 0, 10, year, "", composer_ID, bpm, track, cd)
         self.c.execute('INSERT INTO music VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', inserts)
 
     def fileAddInDB(self, paths, playlist):
@@ -760,7 +760,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             path = unicode(path)
             try:
 #                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
-                title, album, interpreter, comment, genre, length, composer, cd, track, year = self.getData(path)
+                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year = self.getData(path)
                 if not self.searchpath(path):
                     if (not self.searchAIC('interpreter', interpreter)):
                         self.addAIC('interpreter', interpreter)
@@ -770,7 +770,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.addAIC('composer', composer)
                     self.genrefactory(path, genre)
 #                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
-                    self.addMusic(path, title, album, interpreter, comment, genre, length, composer, cd, track, year)
+                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year)
                 else:
                     interpreter_ID = self.testAIC(path, 'interpreter', interpreter)
 #                    albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
@@ -939,7 +939,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         audio["discnumber"] = song["cd"]
         audio["composer"] = song["composer"]
         audio["tracknumber"] = song["track"]
-#        audio["bpm"] = song["bpm"]
+        audio["bpm"] = song["bpm"]
 #        audio["albumartistsort"] = song["albuminterpreter"]
         audio["date"] = song["year"]
 
