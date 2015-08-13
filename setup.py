@@ -48,7 +48,6 @@ setup(
     
     install_requires=[
         'pyglet', 
-        'python-magic', 
         'mutagen', 
     ], 
     

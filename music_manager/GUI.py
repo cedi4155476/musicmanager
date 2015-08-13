@@ -2,7 +2,7 @@
 """
 Module implementing MainWindow.
 """
-import pyglet, magic, sqlite3, mutagen, os.path, shutil, random, time, ConfigParser
+import pyglet, sqlite3, mutagen, os.path, shutil, random, time, ConfigParser
 import xml.etree.cElementTree as ET
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -413,9 +413,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.genrecount = 0
         self.albumcount = 0
         self.interpretercount = 0
-        genre = False
-        album = False
-        interpreter = False
         self.activatedcheckboxes = {}
         checkboxlist = []
         checkboxlist.append([])
@@ -424,31 +421,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for checkbox in self.checkboxes:
             if checkbox.isChecked():
                 if checkbox.parentWidget() == self.genreWidget:
-                    if not genre:
-                        genre = True
+                    if not type & 1:
                         type += 1
                     checkboxlist[0].append(checkbox.text())
                     self.genrecount += 1
 
                 if checkbox.parentWidget() == self.albumWidget:
-                    if not album:
-                        album = True
+                    if not type & 2:
                         type += 2
                     checkboxlist[1].append(checkbox.text())
                     self.albumcount += 1
 
                 if  checkbox.parentWidget() == self.interpreterWidget:
-                    if not interpreter:
-                        interpreter = True
+                    if not type & 4:
                         type += 4
                     checkboxlist[2].append(checkbox.text())
                     self.interpretercount += 1
 
-                if genre:
+                if type & 1:
                     self.activatedcheckboxes.setdefault('genre', checkboxlist[0])
-                if album:
+                if type & 2:
                     self.activatedcheckboxes.setdefault('album', checkboxlist[1])
-                if interpreter:
+                if type & 4:
                     self.activatedcheckboxes.setdefault('interpreter', checkboxlist[2])
         return type
 
@@ -467,13 +461,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for song in self.songs:
             self.filtersongs.append(self.songs[song])
         if type & 1:
-            self.filter_genre(self.activatedcheckboxes)
+            self.filter_genre(self.activatedcheckboxes['genre'])
 
         if type & 2:
-            self.filter_album(self.activatedcheckboxes)
+            self.filter_album(self.activatedcheckboxes['album'])
 
         if type & 4:
-            self.filter_interpreter(self.activatedcheckboxes)
+            self.filter_interpreter(self.activatedcheckboxes['interpreter'])
 
         if type:
             self.reload_Table()
@@ -492,15 +486,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             sgenres = song.get_genres()
             cs = song.get_cs()
             for genre in sgenres:
-                for key in titles:
-                    for title in titles[key]:
-                        if key == 'genre':
-                            if title == genre or (title == 'cs' and cs and not cscleared):
-                                if cs and not cscleared:
-                                    cscleared = True
-                                i += 1
-                                if i == self.genrecount:
-                                    self.genrefiltersongs.append(song)
+                for title in titles:
+                    if title == genre or (title == 'cs' and cs and not cscleared):
+                        if cs and not cscleared:
+                            cscleared = True
+                        i += 1
+                        if i == self.genrecount:
+                            self.genrefiltersongs.append(song)
 
     def filter_album(self, titles):
         """
@@ -514,13 +506,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for song in songs:
             i = 0
             album = song.get_album()
-            for key in titles:
-                for title in titles[key]:
-                    if key == 'album':
-                        if title == album:
-                            i += 1
-                            if i == self.albumcount:
-                                self.albumfiltersongs.append(song)
+            for title in titles:
+                if title == album:
+                    i += 1
+                    if i == self.albumcount:
+                        self.albumfiltersongs.append(song)
 
     def filter_interpreter(self, titles):
         """
@@ -536,13 +526,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for song in songs:
             i = 0
             interpreter = song.get_interpreter()
-            for key in titles:
-                for title in titles[key]:
-                    if key == 'interpreter':
-                        if title == interpreter:
-                            i += 1
-                            if i == self.interpretercount:
-                                self.interpreterfiltersongs.append(song)
+            for title in titles:
+                if title == interpreter:
+                    i += 1
+                    if i == self.interpretercount:
+                        self.interpreterfiltersongs.append(song)
 
     def reload_Table(self):
         """
@@ -602,7 +590,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         fk = type + "_FK"
         ID = type + "_ID"
         name = type + "_name"
-        self.c.execute('SELECT {id} FROM music WHERE path="{pt}"'.format(id=fk, pt=path))
+        self.c.execute('SELECT {id} FROM music WHERE path=?'.format(id=fk), (path, ))
         type_ID = self.c.fetchone()
         if type_ID:
             type_ID = type_ID[fk]
@@ -614,7 +602,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if not self.searchAIC(type, value):
                 ex = (None, value)
                 self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
-            
+
             self.AICIsNeeded(type, ovalue)
             self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (value, ))
             type_ID = self.c.fetchone()
@@ -639,68 +627,64 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         get the fileinfos
         """
         from mutagen.mp3 import MP3, HeaderNotFoundError
-        type = magic.from_file(path)
         try:
             info = MP3(path)
             length = int(info.info.length)
-            if "MPEG" in type or "Audio file" in type:
-                audio = mutagen.easyid3.EasyID3(path)
-                try:
-                    title = audio["title"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    title = ""
+            audio = mutagen.easyid3.EasyID3(path)
+            try:
+                title = audio["title"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                title = ""
 
-                try:
-                    album = audio["album"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    album = ""
+            try:
+                album = audio["album"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                album = ""
 
-                try:
-                    genre = audio["genre"]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    genre = ["empty", ]
+            try:
+                genre = audio["genre"]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                genre = ["empty", ]
 
-                try:
-                    interpreter = audio["artist"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    interpreter = ""
+            try:
+                interpreter = audio["artist"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                interpreter = ""
 
-                try:
-                    comment = audio["album"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    comment = ""
+            try:
+                comment = audio["album"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                comment = ""
 
 #                try:
 #                    bpm = audio["bpm"][0]
 #                except (mutagen.id3.ID3NoHeaderError, KeyError):
 #                    bpm = ""
 
-                try:
-                    composer = audio["composer"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    composer = ""
+            try:
+                composer = audio["composer"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                composer = ""
 
-                try:
-                    cd = audio["discnumber"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    cd = ""
+            try:
+                cd = audio["discnumber"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                cd = ""
 
-                try:
-                    track = audio["tracknumber"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    track = ""
+            try:
+                track = audio["tracknumber"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                track = ""
 
 #                try:
 #                    albuminterpreter = audio["albumartistsortsort"][0]
 #                except (mutagen.id3.ID3NoHeaderError, KeyError):
 #                    albuminterpreter = ""
 
-                try:
-                    year = audio["date"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    year = ""
-            else:
-                raise ValueError("Could not read File. Are you sure it is a music File?")
+            try:
+                year = audio["date"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                year = ""
 
         except (mutagen.id3.ID3NoHeaderError):
             title = ""
