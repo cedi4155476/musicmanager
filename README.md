@@ -6,6 +6,8 @@ This programm is for people who likes to hear music in a random loop so that one
 
 This programm is not finished, so there will be some errors and it needs a lot more testing before it works like it should.
 Some Files are crashing the programm it is still unclear why this is happening but it should be fixed in the future.
+The albuminterpreter is only locally saved, due to mutagen library.
+
 ## Install with apt-get
 
 You'll need to install avbin to listen to music so just do:
