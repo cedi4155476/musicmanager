@@ -656,10 +656,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             except (mutagen.id3.ID3NoHeaderError, KeyError):
                 comment = ""
 
-                try:
-                    bpm = audio["bpm"][0]
-                except (mutagen.id3.ID3NoHeaderError, KeyError):
-                    bpm = ""
+            try:
+                bpm = audio["bpm"][0]
+            except (mutagen.id3.ID3NoHeaderError, KeyError):
+                bpm = ""
 
             try:
                 composer = audio["composer"][0]
@@ -1182,7 +1182,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         get song information and set them in the player
         """
         item = self.get_playlistItemWithPath(self.song.get_path())
+        scroll = self.playlistWidget.item(item.row(), 1)
         self.playlistWidget.setCurrentItem(item)
+        self.playlistWidget.scrollToItem(scroll)
+        self.playlistWidget.update()
         song = self.song.get_all()
         self.maxlength = song['length']
         self.timebar.setRange(0, self.maxlength*50)
@@ -1528,7 +1531,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             existinplaylist = False
             path = unicode(path)
             for row in range(self.playlistWidget.rowCount()):
-                if path == self.playlistWidget.item(row, 0).text():
+                if path == unicode(self.playlistWidget.item(row, 0).text()):
                     existinplaylist = True
             
             for excep in self.loadErrors:
