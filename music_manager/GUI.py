@@ -45,7 +45,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.createSystemTray()
         self.installEventFilter()
         self.make_connections()
-        self.mdlg = MusicPlayer(self)
+        self.mdlg = MusicPlayer()
         self.musicplayersetslots()
         self.dlg = SearchDialog(self)
         ret = self.dlg.exec_()
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.musicframe.setVisible(False)
         self.files = self.dlg.get_files()
         self.player= pyglet.media.Player()
-        self.mdlg = MusicPlayer(self)
+        self.mdlg = MusicPlayer()
         self.songs = {}
         self.filtersongs = []
         self.info = []

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/GUI.ui'
 #
-# Created: Tue Aug 18 11:42:38 2015
+# Created: Tue Aug 18 16:13:26 2015
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -212,7 +212,7 @@ class Ui_MainWindow(object):
         self.scrollAlbum.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.scrollAlbum.setObjectName(_fromUtf8("scrollAlbum"))
         self.albumWidget = QtGui.QWidget()
-        self.albumWidget.setGeometry(QtCore.QRect(0, 0, 194, 16))
+        self.albumWidget.setGeometry(QtCore.QRect(0, 0, 194, 245))
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -241,7 +241,7 @@ class Ui_MainWindow(object):
         self.scrollInterpreter.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignTop)
         self.scrollInterpreter.setObjectName(_fromUtf8("scrollInterpreter"))
         self.interpreterWidget = QtGui.QWidget()
-        self.interpreterWidget.setGeometry(QtCore.QRect(0, 0, 194, 16))
+        self.interpreterWidget.setGeometry(QtCore.QRect(0, 0, 194, 245))
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
