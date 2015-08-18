@@ -15,6 +15,7 @@ class Loading(QDialog, Ui_Load):
         QDialog.__init__(self, parent)
         self.setupUi(self)
         self.progressBar.setMaximum(maximum)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
     def set_loading(self, progress):
         self.progressBar.setValue(progress)

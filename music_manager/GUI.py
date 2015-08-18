@@ -16,6 +16,7 @@ from load import Loading
 from musicplayer import MusicPlayer
 from mylistview import MyListView
 from Ui_GUI import Ui_MainWindow
+from error import FileDeletedException
 
 from os.path import expanduser
 HOME = expanduser("~")
@@ -44,9 +45,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.createSystemTray()
         self.installEventFilter()
         self.make_connections()
-        self.mdlg = MusicPlayer()
+        self.mdlg = MusicPlayer(self)
         self.musicplayersetslots()
-        self.dlg = SearchDialog()
+        self.dlg = SearchDialog(self)
         ret = self.dlg.exec_()
         if ret == QDialog.Accepted:
             self.currentDir = self.dlg.get_currentdir()
@@ -182,8 +183,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         set the programm back to start
         """
         self.musicframe.setVisible(False)
+        self.files = self.dlg.get_files()
         self.player= pyglet.media.Player()
-        self.mdlg = MusicPlayer()
+        self.mdlg = MusicPlayer(self)
         self.songs = {}
         self.filtersongs = []
         self.info = []
@@ -204,7 +206,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         more edit varieties
         """
         if hasattr(self, 'Spath'):
-            edit = Edit(self.c, self.conn, self.Spath, self.songs[self.Spath])
+            edit = Edit(self.c, self.conn, self.Spath, self.songs[self.Spath], self)
             ret = edit.exec_()
             if ret == QDialog.Accepted:
                 self.conn.commit()
@@ -753,49 +755,54 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if isinstance(paths, basestring):
             paths = (paths, )
 
-        self.load = Loading(len(paths))
+        self.load = Loading(len(paths), self)
         self.load.show()
         i = 0
         for path in paths:
             path = unicode(path)
-            try:
-#                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
-                title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year = self.getData(path)
-                if not self.searchpath(path):
-                    if (not self.searchAIC('interpreter', interpreter)):
-                        self.addAIC('interpreter', interpreter)
-#                    if (not self.searchAIC('albuminterpreter', albuminterpreter)):
-#                        self.addAIC('albuminterpreter', albuminterpreter)
-                    if (not self.searchAIC('composer', composer)):
-                        self.addAIC('composer', composer)
-                    self.genrefactory(path, genre)
-#                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
-                    self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year)
-                else:
-                    interpreter_ID = self.testAIC(path, 'interpreter', interpreter)
-#                    albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
-                    composer_ID = self.testAIC(path, 'composer', composer)
-#                    inserts = (title, album, interpreter_ID, albuminterpreter_ID, composer_ID, path)
-                    inserts = (title, album, interpreter_ID, composer_ID, path)
-#                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=? WHERE path=?', inserts)
-                    self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, composer_FK=? WHERE path=?', inserts)
-            except ValueError, e:
-                logger.warning("failed to load: %s\tError Message: %s" % (path, e))
+            if os.path.isfile(path):
+                try:
+#                  title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
+                    title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year = self.getData(path)
+                    if not self.searchpath(path):
+                        if (not self.searchAIC('interpreter', interpreter)):
+                            self.addAIC('interpreter', interpreter)
+#                        if (not self.searchAIC('albuminterpreter', albuminterpreter)):
+#                         self.addAIC('albuminterpreter', albuminterpreter)
+                        if (not self.searchAIC('composer', composer)):
+                            self.addAIC('composer', composer)
+                        self.genrefactory(path, genre)
+#                        self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year)
+                        self.addMusic(path, title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year)
+                    else:
+                        interpreter_ID = self.testAIC(path, 'interpreter', interpreter)
+#                       albuminterpreter_ID = self.testAIC(path, 'albuminterpreter', albuminterpreter)
+                        composer_ID = self.testAIC(path, 'composer', composer)
+#                       inserts = (title, album, interpreter_ID, albuminterpreter_ID, composer_ID, path)
+                        inserts = (title, album, interpreter_ID, composer_ID, path)
+#                       self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, albuminterpreter_FK=?, composer_FK=? WHERE path=?', inserts)
+                        self.c.execute('UPDATE music SET title=?, album=?, interpreter_FK=?, composer_FK=? WHERE path=?', inserts)
+                except ValueError, e:
+                    logger.warning("failed to load: %s\tError Message: %s" % (path, e))
+                    self.loadErrors.append(path)
+                try:
+                    data, genre = self.get_dbData(path)
+                    self.create_object(path, data, genre, playlist)
+                except:
+                    pass
+                i+=1
+                self.load.progressBar.setValue(i)
+            else:
+                logger.warning("File deleted: %s" % (path))
                 self.loadErrors.append(path)
-            try:
-                data, genre = self.get_dbData(path)
-                self.create_object(path, data, genre, playlist)
-            except:
-                pass
-            i+=1
-            self.load.progressBar.setValue(i)
+                i+= 1
         if i >= len(paths):
             self.load.close()
         logger.removeHandler(hdlr)
         self.conn.commit()
 
         if len(self.loadErrors) > 0:
-            errorBox = QMessageBox(0, "loading Error", str(len(self.loadErrors)) + " files failed to load \n Watch out for special character\n More infos about the files in tmp/error.log file")
+            errorBox = QMessageBox(0, "loading Error", str(len(self.loadErrors)) + " file(s) failed to load \n Maybe the file(s) do not exist anymore.\n More infos about the files in tmp/error.log file")
             errorBox.exec_()
             self.loadErrors = []
 
@@ -1019,7 +1026,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         get the playlistwidgetitem with path
         """
         for i in range(self.playlistWidget.rowCount()):
-            if path == self.playlistWidget.item(i, 0).text():
+            if path == unicode(self.playlistWidget.item(i, 0).text()):
                 return self.playlistWidget.item(i, 0)
 
     def playerPlayNext(self):
@@ -1028,6 +1035,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         time.sleep(0.2)
         self.player.next()
+
+    def disableItem(self, table, row):
+        for c in range(table.columnCount()):
+            item = table.item(row, c)
+            item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+        if table == self.tableWidget:
+            path = unicode(table.item(row, 0).text())
+            del self.songs[path]
 
     def start_randomplay(self):
         """
@@ -1127,12 +1142,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not 'songpath' in locals():
             self.get_nextRandomSong()
             return
-        self.song = self.playlist[songpath]
-        self.songlist.append(self.song)
-        self.index = len(self.songlist) - 1
         if os.path.isfile(songpath):
             self.Ppath = songpath
-            source= pyglet.media.load(songpath)
+            self.song = self.playlist[songpath]
+            self.songlist.append(self.song)
+            self.index = len(self.songlist) - 1
+        else:
+            item = self.get_playlistItemWithPath(songpath)
+            item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+            self.get_nextRandomSong()
+            return
+        source= pyglet.media.load(songpath)
         self.player.queue(source)
         self.decrease_chance()
         self.increase_chance()
@@ -1146,6 +1166,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
 
+        if not os.path.isFile(path):
+            item = self.get_PlaylistItemWithPath(path)
+            self.disableItem(self.playlistWidget, item.row())
+            raise FileDeletedException
         source= pyglet.media.load(path)
         self.player.queue(source)
         self.get_infos()
@@ -1157,6 +1181,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
 
+        if not os.path.isFile(path):
+            item = self.get_playlistItemWithPath(path)
+            self.disableItem(self.playlistWidget, item.row())
+            raise FileDeletedException
         source= pyglet.resource.media(path)
         self.player.queue(source)
 
@@ -1166,16 +1194,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         get next song in normal mode
         """
-        self.update_db(self.playlist, self.Ppath)
-        self.playlistWidget.setCurrentCell(self.index, 1)
         path = unicode(self.playlistWidget.item(self.index,  0).text())
-        path = os.path.abspath(path)
+        path = unicode(os.path.abspath(path))
         if os.path.isfile(path):
+            self.update_db(self.playlist, self.Ppath)
+            self.playlistWidget.setCurrentCell(self.index, 1)
             self.Ppath = path
             source= pyglet.media.load(path)
             self.player.queue(source)
             self.song = self.playlist[self.Ppath]
             self.get_infos()
+        else:
+            item = self.get_playlistItemWithPath(path)
+            self.disableItem(self.playlistWidget, item.row())
+            raise FileDeletedException()
 
     def get_infos(self):
         """
@@ -1282,33 +1314,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.playlist:
             return
         self.playlistTab.setCurrentIndex(1)
-        if not self.musicframe.isVisible():
-            self.musicframe.setVisible(True)
-            self.index = self.playlistWidget.currentRow()
-            self.paus = 0
-            self.playing = True
-            self.single = False
-            self.loop = QTimer()
-            self.loop.timeout.connect(self.timeout)
-            self.loop.start(100)
-            self.START = 0.000001
-            self.Ppath = unicode(self.playlistWidget.item(self.index,  0).text())
-            self.get_nextsong()
-            self.playPlayer()
-            self.get_volume()
-            self.player.volume = self.volume
-            self.soundSlider.setValue(self.volume)
-            self.soundSlider.setSliderPosition(self.volume)
-        elif self.paus >= 5:
-            self.paus = 0
-            self.single = True
-            self.playing = True
-            self.index = self.playlistWidget.currentRow()
-            self.get_nextsong()
-            self.playerPlayNext()
-            self.single = False
-            self.playPlayer()
-        self.playpausebutton.setIcon(QIcon('resources/pause.png'))
+        try:
+            if not self.musicframe.isVisible():
+                self.musicframe.setVisible(True)
+                self.index = self.playlistWidget.currentRow()
+                self.paus = 0
+                self.playing = True
+                self.single = False
+                self.loop = QTimer()
+                self.loop.timeout.connect(self.timeout)
+                self.loop.start(100)
+                self.START = 0.000001
+                self.Ppath = unicode(self.playlistWidget.item(self.index,  0).text())
+                self.get_nextsong()
+                self.playPlayer()
+                self.get_volume()
+                self.player.volume = self.volume
+                self.soundSlider.setValue(self.volume)
+                self.soundSlider.setSliderPosition(self.volume)
+            elif self.paus >= 5:
+                self.paus = 0
+                self.single = True
+                self.playing = True
+                self.index = self.playlistWidget.currentRow()
+                self.get_nextsong()
+                self.playerPlayNext()
+                self.single = False
+                self.playPlayer()
+            self.playpausebutton.setIcon(QIcon('resources/pause.png'))
+        except FileDeletedException:
+            self.musicframe.setVisible(False)
+            return
 
     def create_tree(self):
         """
@@ -1509,7 +1545,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             songs = []
             for song in self.filtersongs:
                 songs.append(song.get_path())
-            
+
         else:
             songs = self.songs
 
@@ -1630,7 +1666,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'Spath'):
             self.conn.commit()
             del self.songs[self.Spath]
-            self.gdlg = Genre(self.c, self.conn, self.Spath)
+            self.gdlg = Genre(self.c, self.conn, self.Spath, self)
             self.gdlg.exec_()
             data, genre = self.get_dbData(self.Spath)
             self.create_object(self.Spath, data, genre, False)
@@ -1726,19 +1762,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             if self.paus == 5:
                 self.paus = 0
                 self.single = True
-                if self.index > 0:
-                    self.index -= 1
-                    if self.RANDOMNESS:
-                        self.get_last()
-                    else:
+                try:
+                    if self.index > 0:
+                        self.index -= 1
+                        if self.RANDOMNESS:
+                            self.get_last()
+                        else:
+                            self.get_nextsong()
+                        self.playerPlayNext()
+                        self.single = False
+                    elif self.index == 0 and not self.RANDOMNESS:
+                        self.index = self.playlistWidget.rowCount()-1
                         self.get_nextsong()
-                    self.playerPlayNext()
-                    self.single = False
-                elif self.index == 0 and not self.RANDOMNESS:
-                    self.index = self.playlistWidget.rowCount()-1
-                    self.get_nextsong()
-                    self.playerPlayNext()
-                    self.single = False
+                        self.playerPlayNext()
+                        self.single = False
+                except FileDeletedException:
+                    self.paus = 5
+                    self.on_previousbutton_clicked()
+                    return
         else:
             self.player.seek(self.START)
 
@@ -1750,19 +1791,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.paus == 5:
             self.paus = 0
             self.single = True
-            if self.RANDOMNESS:
-                if self.index == len(self.songlist) -1:
-                    self.get_nextRandomSong()
+            try:
+                if self.RANDOMNESS:
+                    if self.index == len(self.songlist) -1:
+                        self.get_nextRandomSong()
+                    else:
+                        self.index += 1
+                        self.get_next()
                 else:
-                    self.index += 1
-                    self.get_next()
-            else:
-                if self.index == len(self.playlist) -1:
-                    self.index = 0
-                    self.get_nextsong()
-                else:
-                    self.index += 1
-                    self.get_nextsong()
+                    if self.index == len(self.playlist) -1:
+                        self.index = 0
+                        self.get_nextsong()
+                    else:
+                        self.index += 1
+                        self.get_nextsong()
+            except FileDeletedException:
+                self.paus = 5
+                self.on_nextbutton_clicked()
+                return
             self.playerPlayNext()
             self.single = False
 
@@ -1871,8 +1917,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if self.tableWidget.selectedItems():
             item = self.tableWidget.selectedItems()[0]
-            self.Spath = unicode(self.tableWidget.item(item.row(),  0).text())
+            
+            path = unicode(self.tableWidget.item(item.row(),  0).text())
+            if not os.path.isfile(path):
+                self.disableItem(self.tableWidget, item.row())
+                return
+            self.Spath = path
             self.set_editInfos()
+            self.tableWidget.scrollToItem(item)
 
     @pyqtSignature("QModelIndex")
     def on_playlistTreeView_doubleClicked(self, index):

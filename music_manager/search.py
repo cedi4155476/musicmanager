@@ -51,6 +51,7 @@ class SearchDialog(QDialog, Ui_Dialog):
         return self.currentDir
 
     def get_files(self):
+        self.files = self.currentDir.entryList(QStringList("*"), QDir.Files | QDir.NoSymLinks)
         return self.files
 
     @pyqtSignature("")
