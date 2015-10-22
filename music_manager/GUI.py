@@ -80,11 +80,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if not os.path.exists(HOME + 'playlists'):
             os.makedirs(HOME + 'playlists')
-        
+
         if not os.path.exists(HOME + 'tmp'):
             os.makedirs(HOME + 'tmp')
             open(HOME+'tmp/error.log',  'a').close()
-            
+
 
     def db_connect(self):
         """
@@ -238,10 +238,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.c.execute('''SELECT music.title as title, music.album as album, music.comment as comment, music.cs as cs,  genre.genre_name as genre, interpreter.interpreter_name as interpreter,
                                                 music.length as length, music.chance as chance, music.times_played as timesplayed, music.rating as rating, music.bpm as bpm, music.year as year,
                                                 music.track as track, composer.composer_name as composer, albuminterpreter.albuminterpreter_name as albuminterpreter, music.cd as cd
-                                    FROM music 
-                                    LEFT OUTER JOIN music_genre 
-                                        ON music.path = music_genre.music_path 
-                                    LEFT OUTER JOIN genre 
+                                    FROM music
+                                    LEFT OUTER JOIN music_genre
+                                        ON music.path = music_genre.music_path
+                                    LEFT OUTER JOIN genre
                                         ON music_genre.genre_ID = genre.genre_ID
                                     LEFT OUTER JOIN interpreter
                                         ON music.interpreter_FK = interpreter.interpreter_ID
@@ -389,7 +389,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.albumLayout.removeWidget(checkbox)
             self.interpreterLayout.removeWidget(checkbox)
             checkbox.hide()
-        
+
         if hasattr(self, "aspacerItem"):
             self.albumLayout.removeItem(self.aspacerItem)
         if hasattr(self, "gspacerItem"):
@@ -548,8 +548,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             self.filtersongs = self.genrefiltersongs
 
+        self.tableWidget.setSortingEnabled(False)
         for paste in self.filtersongs:
             self.add_line(paste.get_path())
+        self.tableWidget.setSortingEnabled(True)
 
     def genrefactory(self, path, genres):
         """
@@ -560,7 +562,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def genreadd(self, path, genre):
         """
-        make the connections between song and genre or if it does not exist add the genre to the db and then make connection 
+        make the connections between song and genre or if it does not exist add the genre to the db and then make connection
         """
         if not self.searchgenre(genre):
             gen = (None, genre)
@@ -751,7 +753,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         logger.addHandler(hdlr)
         logger.setLevel(logging.WARNING)
         logger.propagate = False
-        
+
         if isinstance(paths, basestring):
             paths = (paths, )
 
@@ -812,8 +814,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.tableWidget.setRowCount(0)
 
+        self.tableWidget.setSortingEnabled(False)
         for path in self.songs:
             self.add_line(path)
+        self.tableWidget.setSortingEnabled(True)
 
     def fill_row(self):
         """
@@ -893,7 +897,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         type_ID = self.c.fetchone()
         if type_ID:
             type_ID = type_ID[ID]
-            
+
         self.c.execute('SELECT {fk} FROM music WHERE {fk}={tid}'.format(fk=fk, tid=type_ID))
         if self.c.fetchone():
             return True
@@ -961,12 +965,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if not self.searchAIC(type, song[type]):
             ex = (None, song[type])
             self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
-        
+
         self.c.execute('SELECT {id} FROM {tb} WHERE {nm}=?'.format(id=ID, tb=type, nm=name), (unicode(song[type]), ))
         type_ID = self.c.fetchone()
         if type_ID:
             type_ID = type_ID[ID]
-        
+
         return type_ID
 
     def update_db(self, object, path):
@@ -1166,7 +1170,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
 
-        if not os.path.isFile(path):
+        if not os.path.isfile(path):
             item = self.get_PlaylistItemWithPath(path)
             self.disableItem(self.playlistWidget, item.row())
             raise FileDeletedException
@@ -1181,13 +1185,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.song = self.songlist[self.index]
         path = os.path.abspath(self.song.get_path())
 
-        if not os.path.isFile(path):
+        if not os.path.isfile(path):
             item = self.get_playlistItemWithPath(path)
             self.disableItem(self.playlistWidget, item.row())
             raise FileDeletedException
-        source= pyglet.resource.media(path)
+        source = pyglet.media.load(path)
         self.player.queue(source)
-
         self.get_infos()
 
     def get_nextsong(self):
@@ -1569,7 +1572,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for row in range(self.playlistWidget.rowCount()):
                 if path == unicode(self.playlistWidget.item(row, 0).text()):
                     existinplaylist = True
-            
+
             for excep in self.loadErrors:
                 if excep == path:
                     exception = True
@@ -1719,7 +1722,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'playlist'):
             if not self.playlistWidget.selectedIndexes():
                 self.playlistWidget.setFocus()
-                self.setCurrentCell(0, 1)
+                self.playlistWidget.setCurrentCell(0, 1)
             self.playCurrentSong()
 
     @pyqtSignature("")
@@ -1775,6 +1778,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.index = self.playlistWidget.rowCount()-1
                         self.get_nextsong()
                         self.playerPlayNext()
+                        self.single = False
+                    else:
+                        self.player.seek(self.START)
                         self.single = False
                 except FileDeletedException:
                     self.paus = 5
@@ -1917,7 +1923,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         if self.tableWidget.selectedItems():
             item = self.tableWidget.selectedItems()[0]
-            
+
             path = unicode(self.tableWidget.item(item.row(),  0).text())
             if not os.path.isfile(path):
                 self.disableItem(self.tableWidget, item.row())
@@ -1972,7 +1978,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.musicdock.setVisible(False)
             self.mdlg.set_volume(self.volume)
             self.mdlg.showNormal()
-            
+
     def playerClosed(self, int):
         """
         show dockwidget if music player is hidden and close player if music player is closed
