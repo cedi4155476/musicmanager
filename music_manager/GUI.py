@@ -1497,7 +1497,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 songs.append(child.attrib)
         return playlistname, songs
 
-    def create_playlist(self, shuffle):
+    def create_playlist(self):
         """
         create a new playlist and save it
         """
@@ -1514,7 +1514,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             playlistname = HOME + "playlists/"
         playlistname +=  unicode(self.playlistLineEdit.text()) + ".xml"
 
-        if not self.playlistLineEdit.text() and not shuffle:
+        if not self.playlistLineEdit.text():
             errorBox = QMessageBox(0, "No Playlist Name", "Please insert a name for the playlist!")
             errorBox.exec_()
 
@@ -1526,10 +1526,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tree.write(playlistname)
 
         else:
-            if not shuffle:
-                reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
-                if reply == QMessageBox.No:
-                    return
+            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
+            if reply == QMessageBox.No:
+                return
 
             tree.write(playlistname)
 
@@ -1712,7 +1711,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.playlistAdd(songs, False)
             self.playlistWidget.setFocus()
             self.playlistWidget.setCurrentCell(0, 1)
-            self.create_playlist(True)
 
     @pyqtSignature("")
     def on_playallbutton_clicked(self):
@@ -1907,7 +1905,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         save playlist
         """
-        self.create_playlist(False)
+        self.create_playlist()
 
     @pyqtSignature("QTableWidgetItem*")
     def on_playlistWidget_itemDoubleClicked(self, item):
