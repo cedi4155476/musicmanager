@@ -1,9 +1,11 @@
 from math import sqrt
+
+
 class Song(object):
     """
     holds all song object for the programm
     """
-    def __init__(self, path, title=None, album=None, interpreter=None, comment=None, cs=0, genres={}, length=None, chance=500, timesplayed=0,  rating=10, track=None, cd=None, bpm=None, composer=None, albuminterpreter=None, year=None):
+    def __init__(self, path, title=None, album=None, interpreter=None, comment=None, cs=0, genres={}, length=None, chance=500, timesplayed=0, rating=10, track=None, cd=None, bpm=None, composer=None, albuminterpreter=None, year=None):
         self.path = path
         self.title = title
         self.album = album
@@ -22,7 +24,7 @@ class Song(object):
         self.albuminterpreter = albuminterpreter
         self.year = year
 
-    def update(self, title, album, interpreter, comment,  cs, rating):
+    def update(self, title, album, interpreter, comment, cs, rating):
         self.title = title
         self.album = album
         self.interpreter = interpreter
@@ -91,9 +93,9 @@ class Song(object):
     def genres_add(self, genre):
         self.genres.add(genre)
 
-    def genres_del(self,  genre):
+    def genres_del(self, genre):
         self.genres.remove(genre)
 
     def get_all(self):
-        return {'path': self.path, 'title': self.title, 'album': self.album, 'interpreter': self.interpreter, 'comment' : self.comment, 'cs': self.cs, 'genre': self.genres, 'length' : self.length, 'chance' : self.chance,
-                        'timesplayed' : self.timesplayed, 'rating' : self.rating, 'track' : self.track, 'cd' : self.cd, 'bpm' : self.bpm, 'composer' : self.composer, 'albuminterpreter' : self.albuminterpreter, 'year' : self.year}
+        return {'path': self.path, 'title': self.title, 'album': self.album, 'interpreter': self.interpreter, 'comment': self.comment, 'cs': self.cs, 'genre': self.genres, 'length': self.length, 'chance': self.chance,
+                'timesplayed': self.timesplayed, 'rating': self.rating, 'track': self.track, 'cd': self.cd, 'bpm': self.bpm, 'composer': self.composer, 'albuminterpreter': self.albuminterpreter, 'year': self.year}

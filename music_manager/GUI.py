@@ -2,7 +2,14 @@
 """
 Module implementing MainWindow.
 """
-import pyglet, sqlite3, mutagen, os.path, shutil, random, time, ConfigParser
+import pyglet
+import sqlite3
+import mutagen
+import os.path
+import shutil
+import random
+import time
+import ConfigParser
 import xml.etree.cElementTree as ET
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
@@ -22,15 +29,16 @@ from os.path import expanduser
 HOME = expanduser("~")
 HOME += "/Documents/music_manager/"
 
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Das Hauptfenster wird erstellt und alle funktionen eingefügt.
     """
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         """
         Constructor
         """
-        QMainWindow.__init__(self,  parent)
+        QMainWindow.__init__(self, parent)
 
     def start(self):
         """
@@ -52,7 +60,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if ret == QDialog.Accepted:
             self.currentDir = self.dlg.get_currentdir()
             self.files = self.dlg.get_files()
-            self.player= pyglet.media.Player()
+            self.player = pyglet.media.Player()
             self.checkboxes = []
             self.filtersongs = []
             self.songs = {}
@@ -83,14 +91,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if not os.path.exists(HOME + 'tmp'):
             os.makedirs(HOME + 'tmp')
-            open(HOME+'tmp/error.log',  'a').close()
-
+            open(HOME + 'tmp/error.log', 'a').close()
 
     def db_connect(self):
         """
         connect to the db and if it did not exist make the db and it's tables
         """
-        self.conn = sqlite3.connect(HOME +'music.db')
+        self.conn = sqlite3.connect(HOME + 'music.db')
         self.conn.row_factory = self.dict_factory
         self.c = self.conn.cursor()
         try:
@@ -184,7 +191,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         self.musicframe.setVisible(False)
         self.files = self.dlg.get_files()
-        self.player= pyglet.media.Player()
+        self.player = pyglet.media.Player()
         self.mdlg = MusicPlayer()
         self.songs = {}
         self.filtersongs = []
@@ -249,7 +256,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                         ON music.albuminterpreter_FK = albuminterpreter.albuminterpreter_ID
                                     LEFT OUTER JOIN composer
                                         ON music.composer_FK = composer.composer_ID
-                                        WHERE music.path = ?''',  (path, ))
+                                        WHERE music.path = ?''', (path, ))
         datas = self.c.fetchall()
         i = 0
         genre = []
@@ -259,7 +266,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 genre.append(d['genre'])
             else:
                 genre.append(d['genre'])
-            i +=1
+            i += 1
         return data, genre
 
     def create_object(self, path, data, genre, playlist):
@@ -267,9 +274,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         create object for playlist or for editing in table
         """
         if playlist:
-            self.playlist.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
+            self.playlist.setdefault(path, Song(path, data['title'], data['album'], data['interpreter'], data['comment'], data['cs'], genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
         else:
-            self.songs.setdefault(path, Song(path,  data['title'],  data['album'],  data['interpreter'], data['comment'], data['cs'],  genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
+            self.songs.setdefault(path, Song(path, data['title'], data['album'], data['interpreter'], data['comment'], data['cs'], genre, data['length'], data['chance'], data['timesplayed'], data['rating'], data['track'], data['cd'], data['bpm'], data['composer'], data['albuminterpreter'], data['year']))
 
     def get_fileGenres(self):
         """
@@ -434,7 +441,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     checkboxlist[1].append(checkbox.text())
                     self.albumcount += 1
 
-                if  checkbox.parentWidget() == self.interpreterWidget:
+                if checkbox.parentWidget() == self.interpreterWidget:
                     if not type & 4:
                         type += 4
                     checkboxlist[2].append(checkbox.text())
@@ -474,7 +481,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if type:
             self.reload_Table()
         else:
-            #Falls nichts ausgewählt wurde wird die komplette Liste ausgegeben.
+            # Falls nichts ausgewählt wurde wird die komplette Liste ausgegeben.
             self.fill_Table()
 
     def filter_genre(self, titles):
@@ -518,7 +525,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         filter for interpreter
         """
-        self.interpreterfiltered= True
+        self.interpreterfiltered = True
         if self.albumfiltersongs or self.albumfiltered:
             songs = self.albumfiltersongs
         elif self.genrefiltersongs or self.genrefiltered:
@@ -764,8 +771,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             path = unicode(path)
             if os.path.isfile(path):
                 try:
-#                  title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
                     title, album, interpreter, comment, genre, length, bpm, composer, cd, track, year = self.getData(path)
+#                   title, album, interpreter, comment, genre, length, bpm, composer, cd, track, albuminterpreter, year = self.getData(path)
                     if not self.searchpath(path):
                         if (not self.searchAIC('interpreter', interpreter)):
                             self.addAIC('interpreter', interpreter)
@@ -792,12 +799,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     self.create_object(path, data, genre, playlist)
                 except:
                     pass
-                i+=1
+                i += 1
                 self.load.progressBar.setValue(i)
             else:
                 logger.warning("File deleted: %s" % (path))
                 self.loadErrors.append(path)
-                i+= 1
+                i += 1
         if i >= len(paths):
             self.load.close()
         logger.removeHandler(hdlr)
@@ -825,7 +832,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         song = self.songs[self.Spath].get_all()
         row = self.tableWidget.currentRow()
-        qname = self.getValidQTWI(song['path'].split( "/")[-1])
+        qname = self.getValidQTWI(song['path'].split("/")[-1])
         qpath = self.getValidQTWI(song['path'])
         qtitle = self.getValidQTWI(song['title'])
         qalbum = self.getValidQTWI(song['album'])
@@ -846,7 +853,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         song = self.songs[path].get_all()
 
-        qname = self.getValidQTWI(song['path'].split( "/")[-1])
+        qname = self.getValidQTWI(song['path'].split("/")[-1])
         qpath = self.getValidQTWI(song['path'])
         qtitle = self.getValidQTWI(song['title'])
         qalbum = self.getValidQTWI(song['album'])
@@ -875,7 +882,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             return QTableWidgetItem()
 
-    def searchpath(self,  path):
+    def searchpath(self, path):
         """
         check if record already exists
         """
@@ -1022,7 +1029,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             config = ConfigParser.ConfigParser()
             config.read(HOME + 'config.ini')
             config.set('player', 'volume', self.volume)
-            with open(HOME + 'config.ini',  'wb') as configfile:
+            with open(HOME + 'config.ini', 'wb') as configfile:
                 config.write(configfile)
 
     def get_playlistItemWithPath(self, path):
@@ -1056,7 +1063,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return
         if not self.musicframe.isVisible():
             self.musicframe.setVisible(True)
-        alreadystarted =False
+        alreadystarted = False
         self.RANDOMNESS = True
         self.count = len(self.playlist)
         self.randomcount = 0
@@ -1134,16 +1141,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         set the next song in random mode
         """
         self.get_randomcount()
-        randomnumber = random.randrange(int(self.randomcount*1000000))
+        randomnumber = random.randrange(int(self.randomcount * 1000000))
         chance = 0
         for path in self.playlist:
-            chance += int(self.playlist[path].get_chance()*1000000)
+            chance += int(self.playlist[path].get_chance() * 1000000)
             if chance >= randomnumber:
                 songpath = os.path.abspath(path)
                 break
 
         self.randomcount = 0
-        if not 'songpath' in locals():
+        if 'songpath' not in locals():
             self.get_nextRandomSong()
             return
         if os.path.isfile(songpath):
@@ -1156,7 +1163,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
             self.get_nextRandomSong()
             return
-        source= pyglet.media.load(songpath)
+        source = pyglet.media.load(songpath)
         self.player.queue(source)
         self.decrease_chance()
         self.increase_chance()
@@ -1174,7 +1181,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             item = self.get_PlaylistItemWithPath(path)
             self.disableItem(self.playlistWidget, item.row())
             raise FileDeletedException
-        source= pyglet.media.load(path)
+        source = pyglet.media.load(path)
         self.player.queue(source)
         self.get_infos()
 
@@ -1197,13 +1204,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         get next song in normal mode
         """
-        path = unicode(self.playlistWidget.item(self.index,  0).text())
+        path = unicode(self.playlistWidget.item(self.index, 0).text())
         path = unicode(os.path.abspath(path))
         if os.path.isfile(path):
             self.update_db(self.playlist, self.Ppath)
             self.playlistWidget.setCurrentCell(self.index, 1)
             self.Ppath = path
-            source= pyglet.media.load(path)
+            source = pyglet.media.load(path)
             self.player.queue(source)
             self.song = self.playlist[self.Ppath]
             self.get_infos()
@@ -1223,13 +1230,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.playlistWidget.update()
         song = self.song.get_all()
         self.maxlength = song['length']
-        self.timebar.setRange(0, self.maxlength*50)
+        self.timebar.setRange(0, self.maxlength * 50)
         m, s = divmod(self.maxlength, 60)
         self.length.setText("/ %02d:%02d" % (m, s))
         self.timebar.setValue(0)
         self.time.setText("%02d:%02d" % (0, 0))
         length = "/ %02d:%02d" % (m, s)
-        range = self.maxlength*50
+        range = self.maxlength * 50
         self.send_songInfos(length, range)
         self.player.seek(self.START)
 
@@ -1237,7 +1244,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         update the progress in time bar and current time
         """
-        self.timebar.setValue(int(self.player.time*50))
+        self.timebar.setValue(int(self.player.time * 50))
         m, s = divmod(int(self.player.time), 60)
         self.time.setText("%02d:%02d" % (m, s))
 
@@ -1328,7 +1335,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.loop.timeout.connect(self.timeout)
                 self.loop.start(100)
                 self.START = 0.000001
-                self.Ppath = unicode(self.playlistWidget.item(self.index,  0).text())
+                self.Ppath = unicode(self.playlistWidget.item(self.index, 0).text())
                 self.get_nextsong()
                 self.playPlayer()
                 self.get_volume()
@@ -1400,13 +1407,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             index = self.playlistTreeView.selectedIndexes()[0]
             path = self.get_path(index)
             if self.model.isDir(index):
-                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the directory?\n All files and directories in it will be deleted.", QMessageBox.Yes|QMessageBox.No);
+                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the directory?\n All files and directories in it will be deleted.", QMessageBox.Yes | QMessageBox.No)
                 if reply == QMessageBox.No:
                     return
                 shutil.rmtree(path)
             else:
                 path += unicode(index.data().toString())
-                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the file?", QMessageBox.Yes|QMessageBox.No);
+                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the file?", QMessageBox.Yes | QMessageBox.No)
                 if reply == QMessageBox.No:
                     return
                 os.remove(path)
@@ -1467,7 +1474,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         load a playlist file to active playlist
         """
         if self.playlist and self.playlistLineEdit.text():
-            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
+            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 return
         self.playlistWidget.setRowCount(0)
@@ -1502,17 +1509,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         create a new playlist and save it
         """
         playlist = ET.Element("playlist")
-        ET.SubElement(playlist, "name",  name=unicode(self.playlistLineEdit.text()))
+        ET.SubElement(playlist, "name", name=unicode(self.playlistLineEdit.text()))
         for i in range(self.playlistWidget.rowCount()):
             path = unicode(self.playlistWidget.item(i, 0).text())
-            ET.SubElement(playlist,  "song", path=path, played="0")
+            ET.SubElement(playlist, "song", path=path, played="0")
         tree = ET.ElementTree(playlist)
 
         if self.playlistTreeView.selectedIndexes():
             playlistname = self.get_path(self.playlistTreeView.selectedIndexes()[0])
         else:
             playlistname = HOME + "playlists/"
-        playlistname +=  unicode(self.playlistLineEdit.text()) + ".xml"
+        playlistname += unicode(self.playlistLineEdit.text()) + ".xml"
 
         if not self.playlistLineEdit.text():
             errorBox = QMessageBox(0, "No Playlist Name", "Please insert a name for the playlist!")
@@ -1526,7 +1533,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             tree.write(playlistname)
 
         else:
-            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
+            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 return
 
@@ -1537,7 +1544,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         send edit table to playlist
         """
         if self.playlist and self.playlistLineEdit.text():
-            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
+            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.No:
                 return
         self.playlistWidget.setRowCount(0)
@@ -1585,7 +1592,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                     qpath = self.getValidQTWI(path)
                     if not song['title']:
-                        qtitle = self.getValidQTWI(song['path'].split( "/")[-1])
+                        qtitle = self.getValidQTWI(song['path'].split("/")[-1])
                     else:
                         qtitle = self.getValidQTWI(song['title'])
                     qlength = self.getValidQTWI(orlength)
@@ -1682,7 +1689,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         save changes for song
         """
-        if hasattr(self,  'Spath'):
+        if hasattr(self, 'Spath'):
             title = unicode(self.lineEditTitle.text())
             interpreter = unicode(self.lineEditInterpreter.text())
             album = unicode(self.lineEditAlbum.text())
@@ -1691,7 +1698,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             rating = unicode(self.spinBoxRating.value())
             self.ointerpreter = self.songs[self.Spath].get_interpreter()
 
-            self.songs[self.Spath].update(title, album, interpreter, comment,  cs, rating)
+            self.songs[self.Spath].update(title, album, interpreter, comment, cs, rating)
             self.update_db(self.songs, self.Spath)
             self.get_allBoxes()
             self.update_file()
@@ -1773,7 +1780,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         self.playerPlayNext()
                         self.single = False
                     elif self.index == 0 and not self.RANDOMNESS:
-                        self.index = self.playlistWidget.rowCount()-1
+                        self.index = self.playlistWidget.rowCount() - 1
                         self.get_nextsong()
                         self.playerPlayNext()
                         self.single = False
@@ -1797,13 +1804,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.single = True
             try:
                 if self.RANDOMNESS:
-                    if self.index == len(self.songlist) -1:
+                    if self.index == len(self.songlist) - 1:
                         self.get_nextRandomSong()
                     else:
                         self.index += 1
                         self.get_next()
                 else:
-                    if self.index == len(self.playlist) -1:
+                    if self.index == len(self.playlist) - 1:
                         self.index = 0
                         self.get_nextsong()
                     else:
@@ -1922,7 +1929,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.tableWidget.selectedItems():
             item = self.tableWidget.selectedItems()[0]
 
-            path = unicode(self.tableWidget.item(item.row(),  0).text())
+            path = unicode(self.tableWidget.item(item.row(), 0).text())
             if not os.path.isfile(path):
                 self.disableItem(self.tableWidget, item.row())
                 return
@@ -1995,7 +2002,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.playing = False
         self.musicframe.setVisible(False)
         self.Ppath = ""
-        self.player= pyglet.media.Player()
+        self.player = pyglet.media.Player()
         self.trayicon.setIcon(QIcon('resources/trayicon.png'))
         self.update_dball(self.playlist)
 

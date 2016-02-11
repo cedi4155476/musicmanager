@@ -1,6 +1,7 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 class MyDragTable(QTableWidget):
     """
     add drag functionality to table

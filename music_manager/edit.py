@@ -23,7 +23,7 @@ class Edit(QDialog, Ui_Edit):
         self.setupUi(self)
         self.song = song
         infos = self.song.get_all()
-        
+
         self.c = c
         self.conn = conn
         self.path = path
@@ -44,7 +44,7 @@ class Edit(QDialog, Ui_Edit):
     def get_infos(self):
         return unicode(self.trackLE.text()), unicode(self.cdLE.text()), unicode(self.bpmLE.text()), unicode(self.titleLE.text()), unicode(self.interpreterLE.text()), unicode(self.composerLE.text()), unicode(self.albuminterpreterLE.text()), unicode(self.albumLE.text()), unicode(self.yearLE.text()), unicode(self.commentTE.toPlainText())
 
-    def getValidString(self,  value):
+    def getValidString(self, value):
         if value:
             return QString(unicode(value))
         else:
@@ -59,7 +59,7 @@ class Edit(QDialog, Ui_Edit):
             self.accept()
         else:
             self.reject()
-    
+
     @pyqtSignature("")
     def on_editGenreButton_clicked(self):
         """

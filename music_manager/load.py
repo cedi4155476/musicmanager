@@ -4,6 +4,7 @@ from PyQt4.QtGui import *
 
 from Ui_load import Ui_Load
 
+
 class Loading(QDialog, Ui_Load):
     """
     little loading screen

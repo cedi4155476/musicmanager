@@ -13,11 +13,12 @@ from os.path import expanduser
 HOME = expanduser("~")
 HOME += "/Documents/music_manager/"
 
+
 class SearchDialog(QDialog, Ui_Dialog):
     """
     search directory to edit songs
     """
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         """
         Constructor
         """
@@ -41,7 +42,7 @@ class SearchDialog(QDialog, Ui_Dialog):
         config = ConfigParser.ConfigParser()
         config.read(HOME + 'config.ini')
         config.set('directory', 'path', self.PATH)
-        with open(HOME + 'config.ini',  'wb') as configfile:
+        with open(HOME + 'config.ini', 'wb') as configfile:
             config.write(configfile)
 
     def get_path(self):
@@ -61,7 +62,7 @@ class SearchDialog(QDialog, Ui_Dialog):
         """
         self.PATH = str(self.lineEditPath.text())
         self.currentDir = QDir(self.PATH)
-        
+
         self.save_config()
 
         self.files = self.currentDir.entryList(QStringList("*"), QDir.Files | QDir.NoSymLinks)

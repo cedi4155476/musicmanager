@@ -1,11 +1,13 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 class MyListView(QListView):
     """
     list view which closes with nearly every key
     """
     listviewclose = pyqtSignal()
+
     def __init__(self, parent=None):
         QListView.__init__(self)
 

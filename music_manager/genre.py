@@ -8,11 +8,12 @@ from PyQt4.QtCore import *
 
 from Ui_genre import Ui_genre
 
+
 class Genre(QDialog, Ui_genre):
     """
     handle genre editing with dialog
     """
-    def __init__(self, c, conn, path, parent = None):
+    def __init__(self, c, conn, path, parent=None):
         """
         Constructor
         """
@@ -43,9 +44,9 @@ class Genre(QDialog, Ui_genre):
         """
         get all genres of editing song
         """
-        self.c.execute('''SELECT genre.genre_name as genre, genre.genre_ID as ID FROM genre 
-                                                JOIN music_genre 
-                                                    ON genre.genre_ID = music_genre.genre_ID 
+        self.c.execute('''SELECT genre.genre_name as genre, genre.genre_ID as ID FROM genre
+                                                JOIN music_genre
+                                                    ON genre.genre_ID = music_genre.genre_ID
                                                     WHERE music_genre.music_path = ?''', (self.path, ))
         self.Sgenres = self.c.fetchall()
 
@@ -71,7 +72,7 @@ class Genre(QDialog, Ui_genre):
         """
         checks if genre already exists
         """
-        self.c.execute('SELECT genre_ID FROM genre WHERE genre_name = ?',  (genre, ))
+        self.c.execute('SELECT genre_ID FROM genre WHERE genre_name = ?', (genre, ))
         exist = self.c.fetchone()
         if exist:
             return True
@@ -95,10 +96,10 @@ class Genre(QDialog, Ui_genre):
         """
         if self.comboboxdel.currentText():
             currentText = unicode(self.comboboxdel.currentText())
-            self.c.execute('SELECT genre_ID FROM genre WHERE genre_name = ?',  (currentText, ))
+            self.c.execute('SELECT genre_ID FROM genre WHERE genre_name = ?', (currentText, ))
             delgenreID = self.c.fetchone()['genre_ID']
             delete = (self.path, delgenreID)
-            self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
+            self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?', delete)
 
             if not self.genreIsNeeded(currentText):
                 self.c.execute('DELETE FROM genre WHERE genre_name = ?', (currentText, ))
@@ -123,12 +124,12 @@ class Genre(QDialog, Ui_genre):
                 self.c.execute('''SELECT genre_ID FROM genre WHERE genre_name = "empty" ''')
                 delgenreID = self.c.fetchone()['genre_ID']
                 delete = (self.path, delgenreID)
-                self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
+                self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?', delete)
 
             currentText = unicode(self.comboboxadd.currentText())
             if not self.genreExists(currentText):
                 genreadd = (None, currentText)
-                self.c.execute('''INSERT INTO genre VALUES (?,?) ''',  genreadd)
+                self.c.execute('''INSERT INTO genre VALUES (?,?) ''', genreadd)
 
             if self.comboboxdel.findText(currentText) < 0:
                 self.c.execute('SELECT genre_ID from genre WHERE genre_name = ?', (currentText, ))

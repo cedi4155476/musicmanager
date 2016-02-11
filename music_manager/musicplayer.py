@@ -3,6 +3,7 @@ from PyQt4.QtCore import *
 
 from Ui_musicplayer import Ui_music
 
+
 class MusicPlayer(QDialog, Ui_music):
     """
     music player dialog for listening to the songs
@@ -53,7 +54,7 @@ class MusicPlayer(QDialog, Ui_music):
         scrolling for long titles
         """
         if self.scrolltitel.horizontalScrollBar().value() < self.scrolltitel.horizontalScrollBar().maximum() and self.titeli >= 0:
-            self.scrolltitel.horizontalScrollBar().setValue(self.scrolltitel.horizontalScrollBar().value()+10)
+            self.scrolltitel.horizontalScrollBar().setValue(self.scrolltitel.horizontalScrollBar().value() + 10)
         elif self.titeli >= 4:
             self.scrolltitel.horizontalScrollBar().setValue(0)
             self.titeli = -8
@@ -65,7 +66,7 @@ class MusicPlayer(QDialog, Ui_music):
         scrolling for long albums
         """
         if self.scrollalbum.horizontalScrollBar().value() < self.scrollalbum.horizontalScrollBar().maximum() and self.albumi >= 0:
-            self.scrollalbum.horizontalScrollBar().setValue(self.scrollalbum.horizontalScrollBar().value()+10)
+            self.scrollalbum.horizontalScrollBar().setValue(self.scrollalbum.horizontalScrollBar().value() + 10)
         elif self.albumi >= 4:
             self.scrollalbum.horizontalScrollBar().setValue(0)
             self.albumi = -8
@@ -77,7 +78,7 @@ class MusicPlayer(QDialog, Ui_music):
         scrolling for long interpreters
         """
         if self.scrollinterpreter.horizontalScrollBar().value() < self.scrollinterpreter.horizontalScrollBar().maximum() and self.interpreteri >= 0:
-            self.scrollinterpreter.horizontalScrollBar().setValue(self.scrollinterpreter.horizontalScrollBar().value()+10)
+            self.scrollinterpreter.horizontalScrollBar().setValue(self.scrollinterpreter.horizontalScrollBar().value() + 10)
         elif self.interpreteri >= 4:
             self.scrollinterpreter.horizontalScrollBar().setValue(0)
             self.interpreteri = -8
@@ -105,7 +106,7 @@ class MusicPlayer(QDialog, Ui_music):
         """
         set progress
         """
-        self.progress.setValue(time*50)
+        self.progress.setValue(time * 50)
         m, s = divmod(time, 60)
         self.time.setText("%02d:%02d" % (m, s))
 

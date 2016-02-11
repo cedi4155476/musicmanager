@@ -1,6 +1,7 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 class MyDropTable(QTableWidget):
     """
     add drop functionality to table
@@ -12,19 +13,19 @@ class MyDropTable(QTableWidget):
         self.setAcceptDrops(True)
 
     def mimeTypes(self):
-        types =['application/x-songlistdata', 'text/x-moz-url']
+        types = ['application/x-songlistdata', 'text/x-moz-url']
         return types
 
     def dragEnterEvent(self, e):
-         if e.mimeData().hasFormat('application/x-songlistdata') or e.mimeData().hasFormat('text/x-moz-url'):
+        if e.mimeData().hasFormat('application/x-songlistdata')or e.mimeData().hasFormat('text/x-moz-url'):
             e.acceptProposedAction()
 
     def dragMoveEvent(self, e):
-        #Function must be
+        # Function must be
         pass
 
     def dropMimeData(self, row, column, data, action):
-        if data.hasFormat('application/x-songlistdata'): 
+        if data.hasFormat('application/x-songlistdata'):
             bytearray = data.data('application/x-songlistdata')
             paths = bytearray.data().split('\\')
         else:
