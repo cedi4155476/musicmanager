@@ -53,7 +53,7 @@ class Edit(QDialog, Ui_Edit):
     @pyqtSignature("QAbstractButton*")
     def on_buttonBox_clicked(self, button):
         """
-        Slot documentation goes here.
+        Save Changes
         """
         if button.text() == 'Save':
             self.accept()
@@ -63,7 +63,7 @@ class Edit(QDialog, Ui_Edit):
     @pyqtSignature("")
     def on_editGenreButton_clicked(self):
         """
-        Slot documentation goes here.
+        Open Genre edit Box
         """
         self.gdlg = Genre(self.c, self.conn, self.path)
         self.gdlg.exec_()

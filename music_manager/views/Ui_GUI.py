@@ -647,11 +647,11 @@ class Ui_MainWindow(object):
         self.actionRefresh.setShortcut(_translate("MainWindow", "F5", None))
         self.actionEdit.setText(_translate("MainWindow", "Edit", None))
 
-from myDropTable import MyDropTable
-from myProgressbar import MyProgressbar
-from myDragTable import MyDragTable
-from mytreeview import MyTreeView
-import resource_rc
+from .myDropTable import MyDropTable
+from .myProgressbar import MyProgressbar
+from .myDragTable import MyDragTable
+from .mytreeview import MyTreeView
+# from . import resource_rc
 
 if __name__ == "__main__":
     import sys
