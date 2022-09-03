@@ -1,6 +1,7 @@
 #! /usr/bin/python
 
-from music_manager import launch
+from music_manager import MusicManager
 
 if __name__ == "__main__":
-    launch()
+    MM = MusicManager()
+    MM.launch()

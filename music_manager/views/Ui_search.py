@@ -3,11 +3,11 @@
 # Form implementation generated from reading ui file '/home/cch/Documents/python/music_manager/music_manager/search.ui'
 #
 # Created: Tue Aug 11 11:27:32 2015
-#      by: PyQt4 UI code generator 4.10.4
+#      by: PyQt5 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore, QtGui
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -16,12 +16,12 @@ except AttributeError:
         return s
 
 try:
-    _encoding = QtGui.QApplication.UnicodeUTF8
+    _encoding = QtWidgets.QApplication.UnicodeUTF8
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig, _encoding)
+        return QtWidgets.QApplication.translate(context, text, disambig, _encoding)
 except AttributeError:
     def _translate(context, text, disambig):
-        return QtGui.QApplication.translate(context, text, disambig)
+        return QtWidgets.QApplication.translate(context, text, disambig)
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -30,20 +30,20 @@ class Ui_Dialog(object):
         Dialog.resize(337, 98)
         Dialog.setMinimumSize(QtCore.QSize(337, 98))
         Dialog.setMaximumSize(QtCore.QSize(337, 98))
-        self.gridLayout_2 = QtGui.QGridLayout(Dialog)
+        self.gridLayout_2 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
-        self.gridLayout = QtGui.QGridLayout()
+        self.gridLayout = QtWidgets.QGridLayout()
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
-        self.lineEditPath = QtGui.QLineEdit(Dialog)
+        self.lineEditPath = QtWidgets.QLineEdit(Dialog)
         self.lineEditPath.setObjectName(_fromUtf8("lineEditPath"))
         self.gridLayout.addWidget(self.lineEditPath, 0, 0, 1, 1)
-        self.directoryPath = QtGui.QPushButton(Dialog)
+        self.directoryPath = QtWidgets.QPushButton(Dialog)
         self.directoryPath.setObjectName(_fromUtf8("directoryPath"))
         self.gridLayout.addWidget(self.directoryPath, 0, 1, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
-        self.buttonBox = QtGui.QDialogButtonBox(Dialog)
+        self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QtGui.QDialogButtonBox.Cancel|QtGui.QDialogButtonBox.Ok)
+        self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName(_fromUtf8("buttonBox"))
         self.gridLayout_2.addWidget(self.buttonBox, 1, 0, 1, 1)
 
@@ -57,7 +57,7 @@ class Ui_Dialog(object):
 
 if __name__ == "__main__":
     import sys
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     Dialog = QtGui.QDialog()
     ui = Ui_Dialog()
     ui.setupUi(Dialog)
