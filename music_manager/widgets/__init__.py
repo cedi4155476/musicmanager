@@ -10,3 +10,4 @@ from widgets.playlist import Playlist
 from widgets.search import SearchDialog
 from widgets.filter import Filter
 from widgets.mylistview import MyListView
+from widgets.short_edit import ShortEdit

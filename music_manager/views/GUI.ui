@@ -74,12 +74,12 @@
            <item>
             <widget class="QLabel" name="label">
              <property name="text">
-              <string>Interpreter</string>
+              <string>Artist</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEditInterpreter"/>
+            <widget class="QLineEdit" name="lineEditArtist"/>
            </item>
           </layout>
          </item>
@@ -231,7 +231,7 @@
               </property>
               <widget class="QWidget" name="genretab">
                <attribute name="title">
-                <string>Genres</string>
+                <string>Genre</string>
                </attribute>
                <layout class="QGridLayout" name="gridLayout_5">
                 <item row="0" column="0">
@@ -331,13 +331,13 @@
                 </item>
                </layout>
               </widget>
-              <widget class="QWidget" name="interpretertab">
+              <widget class="QWidget" name="artisttab">
                <attribute name="title">
-                <string>Interpreter</string>
+                <string>Artist</string>
                </attribute>
                <layout class="QGridLayout" name="gridLayout_9">
                 <item row="0" column="0">
-                 <widget class="QScrollArea" name="scrollInterpreter">
+                 <widget class="QScrollArea" name="scrollArtist">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                     <horstretch>0</horstretch>
@@ -359,7 +359,7 @@
                   <property name="alignment">
                    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                   </property>
-                  <widget class="QWidget" name="interpreterWidget">
+                  <widget class="QWidget" name="artistWidget">
                    <property name="geometry">
                     <rect>
                      <x>0</x>
@@ -374,7 +374,7 @@
                      <verstretch>0</verstretch>
                     </sizepolicy>
                    </property>
-                   <layout class="QVBoxLayout" name="interpreterLayout">
+                   <layout class="QVBoxLayout" name="artistLayout">
                     <property name="sizeConstraint">
                      <enum>QLayout::SetDefaultConstraint</enum>
                     </property>
@@ -527,12 +527,12 @@
            </column>
            <column>
             <property name="text">
-             <string>Interpreter</string>
+             <string>Artist</string>
             </property>
            </column>
            <column>
             <property name="text">
-             <string>Genres</string>
+             <string>Genre</string>
             </property>
            </column>
            <column>

@@ -2,9 +2,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 class EventHandler(QObject):
-    def __init__(self, wh, parent = None):
+    def __init__(self, widget_handler, parent = None):
         QObject.__init__(self, parent)
-        self.wh = wh
+        self.widget_handler = widget_handler
         self.installEventFilter()
         self.make_connections()
 
@@ -12,80 +12,27 @@ class EventHandler(QObject):
         """
         install the Event Filters
         """
-        self.wh.GUI.playlistWidget.installEventFilter(self)
-        self.wh.GUI.tableWidget.installEventFilter(self)
-        self.wh.GUI.playlistTreeView.installEventFilter(self)
-        self.wh.GUI.musicdock.installEventFilter(self)
+        self.widget_handler.GUI.playlistWidget.installEventFilter(self)
+        self.widget_handler.GUI.tableWidget.installEventFilter(self)
+        self.widget_handler.GUI.playlistTreeView.installEventFilter(self)
+        self.widget_handler.GUI.musicdock.installEventFilter(self)
 
     def make_connections(self):
         """
         create the connects
         """
-        self.wh.GUI.playlistSearchLineEdit.view().listviewclose.connect(self.listViewClose)
-        self.wh.GUI.playlistWidget.playlistInfo.connect(self.playlistAdd)
-        self.wh.GUI.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
-        self.wh.GUI.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.playlistSearchEnterPressed)
-
-    def listViewClose(self):
-        """
-        close popup if user wants to edit search
-        """
-        self.wh.GUI.playlistSearchLineEdit.hidePopup()
+        self.widget_handler.GUI.playlistSearchLineEdit.view().listviewclose.connect(self.widget_handler.GUI.playlistSearchLineEdit.hidePopup)
+        self.widget_handler.GUI.playlistWidget.playlistInfo.connect(self.widget_handler.PLAYLIST.playlist_add_paths)
+        self.widget_handler.GUI.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
+        self.widget_handler.GUI.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.widget_handler.PLAYLIST.search_playlist)
+        self.widget_handler.GUI.timebar.release_play.connect(self.widget_handler.MUSICPLAYER.release_play)
+        self.widget_handler.GUI.timebar.progress_movement.connect(self.widget_handler.MUSICPLAYER.progress_movement)
 
     def tableWidgetReturnPressed(self):
         """
         add all edit songs to playlist and play song if enter is pressed in edit table
         """
-        self.wh.GUI.on_tableWidget_itemDoubleClicked(self.wh.GUI.tableWidget.currentItem())
-
-    # TODO: this one should be done in playlist
-    def playlistSearchEnterPressed(self):
-        """
-        search playlist or folder
-        """
-        self.search_playlist()
-
-    # TODO: this one should be done in playlist
-    def playlistAdd(self, paths, sort):
-        """
-        add song in playlist
-        """
-        self.fileAddInDB(paths, True)
-        for path in paths:
-            exception = False
-            existinplaylist = False
-            path = path
-            for row in range(self.playlistWidget.rowCount()):
-                if path == self.playlistWidget.item(row, 0).text():
-                    existinplaylist = True
-
-            for excep in self.loadErrors:
-                if excep == path:
-                    exception = True
-                    break
-
-            if not existinplaylist and not exception:
-                try:
-                    song = self.playlist[path].get_all()
-                    m, s = divmod(song['length'], 60)
-                    orlength = ('%02d:%02d' % (m, s))
-
-                    qpath = self.getValidQTWI(path)
-                    if not song['title']:
-                        qtitle = self.getValidQTWI(song['path'].split( "/")[-1])
-                    else:
-                        qtitle = self.getValidQTWI(song['title'])
-                    qlength = self.getValidQTWI(orlength)
-                    qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
-                    row = self.playlistWidget.rowCount()
-                    self.playlistWidget.insertRow(row)
-                    self.playlistWidget.setItem(row, 0, qpath)
-                    self.playlistWidget.setItem(row, 1, qtitle)
-                    self.playlistWidget.setItem(row, 2, qlength)
-                    if sort:
-                        self.playlistWidget.sortItems(1)
-                except (KeyError, UnboundLocalError):
-                    pass
+        self.widget_handler.GUI.on_tableWidget_itemDoubleClicked(self.tableWidget.currentItem())
 
     def eventFilter(self, source, e):
         """

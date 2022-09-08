@@ -1,9 +1,11 @@
+from distutils.log import error
 import mutagen
 from mutagen.mp3 import MP3, HeaderNotFoundError
 from mutagen.id3 import ID3NoHeaderError
 
-from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
+from utils import show_error_box
 from logger import Logger
 from objects.song import Song
 
@@ -24,6 +26,8 @@ class SongHandler:
         i = 0
 
         for path in paths:
+            if path.suffix == ".jpg":
+                continue
             if path.exists():
                 try:
                     song_file = self.read_file_info(path)
@@ -37,7 +41,7 @@ class SongHandler:
                             song_file = song_database
                     else:
                         self.db.add_song(song_file)
-                    self.songs[path] = song_file
+                    self.songs[str(path.resolve())] = song_file
                 except ValueError as e:
                     logger.warning(f"failed to load: {path}\tError Message: {e}")
                     load_errors.append(path)
@@ -57,8 +61,7 @@ class SongHandler:
         self.db.commit()
 
         if len(load_errors) > 0:
-            errorBox = QtWidgets.QMessageBox(0, f"loading Error {str(len(load_errors))} file(s) failed to load \n Maybe the file(s) do not exist anymore.\n More infos about the files in tmp/error.log file")
-            errorBox.exec_()
+            show_error_box("loading Error", f"{str(len(load_errors))} file(s) failed to load \n Maybe the file(s) do not exist anymore.\n More infos about the files in tmp/error.log file")
             load_errors = []
 
     def read_file_info(self, path):
@@ -89,9 +92,9 @@ class SongHandler:
                 info_dict["genres"] = ["empty", ]
 
             try:
-                info_dict["interpreter"] = audio["artist"][0]
+                info_dict["artist"] = audio["artist"][0]
             except (ID3NoHeaderError, KeyError):
-                info_dict["interpreter"] = ""
+                info_dict["artist"] = ""
 
             try:
                 info_dict["comment"] = audio["album"][0]
@@ -126,7 +129,7 @@ class SongHandler:
         except (ID3NoHeaderError):
             info_dict["title"] = ""
             info_dict["album"] = ""
-            info_dict["interpreter"] = ""
+            info_dict["artist"] = ""
             info_dict["comment"] = ""
             info_dict["genres"] = ["empty", ]
             info_dict["bpm"] = ""
@@ -140,15 +143,14 @@ class SongHandler:
 
         return Song(path, info_dict)
 
-    def update_file(self):
+    def update_file(self, song):
         """
         save changes in file
         """
-        song = self.songs[self.Spath]
         try:
-            audio = mutagen.easyid3.EasyID3(self.Spath)
+            audio = mutagen.easyid3.EasyID3(song.raw_path)
         except ID3NoHeaderError:
-            audio = mutagen.File(self.Spath, easy=True)
+            audio = mutagen.File(song.raw_path, easy=True)
             audio.add_tags()
         genres = []
 
@@ -157,12 +159,11 @@ class SongHandler:
 
         audio["title"] = song.title
         audio["album"] = song.album
-        audio["artist"] = song.interpreter
+        audio["artist"] = song.artist
         audio["genre"] = genres
         audio["discnumber"] = song.cd
         audio["composer"] = song.composer
         audio["tracknumber"] = song.track
         audio["bpm"] = song.bpm
         audio["date"] = song.year
-
         audio.save()

@@ -1,0 +1,2 @@
+class FileDeletedException (Exception):
+    pass

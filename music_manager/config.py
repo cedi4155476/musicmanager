@@ -38,7 +38,7 @@ class Config:
         """
         Save the used volume
         """
-        self.config.set('player', 'volume', volume)
+        self.config.set('player', 'volume', str(volume))
         self.save_config()
     
     def save_config(self):

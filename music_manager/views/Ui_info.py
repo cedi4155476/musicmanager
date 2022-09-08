@@ -67,9 +67,9 @@ class Ui_Info(object):
     def retranslateUi(self, Info):
         Info.setWindowTitle(_translate("Info", "Info", None))
         self.label.setText(_translate("Info", "Music Manager", None))
-        self.label_2.setText(_translate("Info", "Author: Cédric Christen", None))
+        self.label_2.setText(_translate("Info", "Author: cedi4155476", None))
         self.label_3.setText(_translate("Info", "Version: 1.2", None))
-        self.label_4.setText(_translate("Info", "Manage your music files with Music Manager and also use the music player to hear your songs from playlists with different types of randomness.", None))
+        self.label_4.setText(_translate("Info", "Manage your music files with the Music Manager and also use the music player to enjoy your songs from a playlist with different types of randomness.", None))
 
 
 if __name__ == "__main__":

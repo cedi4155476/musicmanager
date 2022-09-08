@@ -50,7 +50,7 @@
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Interpreter</string>
+          <string>Artist</string>
          </property>
         </widget>
        </item>
@@ -64,7 +64,7 @@
        <item>
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Album-Interpreter</string>
+          <string>Album-Artist</string>
          </property>
         </widget>
        </item>
@@ -133,7 +133,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <widget class="QLineEdit" name="interpreterLE"/>
+          <widget class="QLineEdit" name="artistLE"/>
          </item>
         </layout>
        </item>
@@ -147,7 +147,7 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
-          <widget class="QLineEdit" name="albuminterpreterLE">
+          <widget class="QLineEdit" name="albumartistLE">
            <property name="enabled">
             <bool>true</bool>
            </property>

@@ -11,6 +11,10 @@ class Filter:
         self.widget_handler = widget_handler
         self.song_handler = song_handler
 
+    def reset(self):
+        for checkbox in self.checkboxes:
+            checkbox.setChecked(False)
+
     def get_allBoxes(self):
         """
         removes then creates all boxes for filtering
@@ -18,7 +22,7 @@ class Filter:
         for checkbox in self.checkboxes:
             self.widget_handler.GUI.genreLayout.removeWidget(checkbox)
             self.widget_handler.GUI.albumLayout.removeWidget(checkbox)
-            self.widget_handler.GUI.interpreterLayout.removeWidget(checkbox)
+            self.widget_handler.GUI.artistLayout.removeWidget(checkbox)
             checkbox.hide()
 
         if hasattr(self.widget_handler.GUI, "aspacerItem"):
@@ -26,7 +30,7 @@ class Filter:
         if hasattr(self.widget_handler.GUI, "gspacerItem"):
             self.widget_handler.GUI.genreLayout.removeItem(self.widget_handler.GUI.gspacerItem)
         if hasattr(self.widget_handler.GUI, "ispacerItem"):
-            self.widget_handler.GUI.interpreterLayout.removeItem(self.widget_handler.GUI.ispacerItem)
+            self.widget_handler.GUI.artistLayout.removeItem(self.widget_handler.GUI.ispacerItem)
 
         self.checkboxes = []
 
@@ -39,14 +43,14 @@ class Filter:
         get all the folder filters
         """
         folder_genres = set(['empty'])
-        folder_interpreters = set()
+        folder_artists = set()
         folder_albums = set()
         for song in self.song_handler.songs.values():
                 folder_genres.update(song.genres)
-                folder_interpreters.add(song.interpreter)
+                folder_artists.add(song.artist)
                 folder_albums.add(song.album)
         self.folder_genres = list(folder_genres)
-        self.folder_interpreters = list(folder_interpreters)
+        self.folder_artists = list(folder_artists)
         self.folder_albums = list(folder_albums)
 
     def create_checkbox(self, text, widget, layout):
@@ -73,14 +77,14 @@ class Filter:
             self.widget_handler.GUI.genreLayout.addSpacerItem(self.widget_handler.GUI.gspacerItem)
 
         i = 0
-        for interpreter in self.folder_interpreters:
-            if interpreter:
-                self.create_checkbox(interpreter, self.widget_handler.GUI.interpreterWidget, self.widget_handler.GUI.interpreterLayout)
+        for artist in self.folder_artists:
+            if artist:
+                self.create_checkbox(artist, self.widget_handler.GUI.artistWidget, self.widget_handler.GUI.artistLayout)
                 i += 1
 
         if i < 20:
             self.widget_handler.GUI.ispacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
-            self.widget_handler.GUI.interpreterLayout.addSpacerItem(self.widget_handler.GUI.ispacerItem)
+            self.widget_handler.GUI.artistLayout.addSpacerItem(self.widget_handler.GUI.ispacerItem)
 
         i = 0
         for album in self.folder_albums:
@@ -119,8 +123,8 @@ class Filter:
                 if checkbox.parentWidget().accessibleName() == "album filter widget":
                     activated_checkboxes.append(("album", checkbox.text()))
 
-                if  checkbox.parentWidget().accessibleName() == "interpreter filter widget":
-                    activated_checkboxes.append(("interpreter", checkbox.text()))
+                if  checkbox.parentWidget().accessibleName() == "artist filter widget":
+                    activated_checkboxes.append(("artist", checkbox.text()))
         return activated_checkboxes
 
     def filter_song(self, song, activated_checkboxes):
@@ -132,5 +136,12 @@ class Filter:
             else:
                 if not song_dict[checkbox[0]] == checkbox[1]:
                     return False
-
         return True
+    
+    def remove_all_checkboxes(self):
+        for checkbox in self.checkboxes:
+            self.widget_handler.GUI.genreLayout.removeWidget(checkbox)
+            self.widget_handler.GUI.albumLayout.removeWidget(checkbox)
+            self.widget_handler.GUI.artistLayout.removeWidget(checkbox)
+            checkbox.hide()
+        self.checkboxes = []

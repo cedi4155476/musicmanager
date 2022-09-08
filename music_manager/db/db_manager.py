@@ -12,7 +12,7 @@ class DBManager:
         self.conn.row_factory = self.dict_factory
         self.c = self.conn.cursor()
         try:
-            self.c.execute('SELECT path FROM song')
+            self.c.execute('SELECT song_id FROM song')
         except sqlite3.OperationalError:
             for line in open("db/"+'dbcreate.sql'):
                 try:
@@ -21,7 +21,7 @@ class DBManager:
                     break
     
     def __del__(self):
-        self.conn.commit()
+        self.commit()
         self.c.close()
         self.conn.close()
 
@@ -37,72 +37,23 @@ class DBManager:
     def commit(self):
         self.conn.commit()
 
-    def get_all_genres(self):
-        """
-        Get all Genres from all Songs
-        """
-        self.c.execute('SELECT genre_name as genre FROM genre')
-        return self.c.fetchall()
-
-    def get_all_genres_of_song(self, path):
-        """
-        get all genres of editing song
-        """
-        self.c.execute('''SELECT genre.genre_name as genre, genre.genre_id as id FROM genre 
-                                                JOIN song_genre 
-                                                    ON genre.genre_id = song_genre.genre_id 
-                                                    WHERE song_genre.song_path = ?''', (path, ))
-        return self.c.fetchall()
-
-    def is_genre_needed(self, genre):
-        """
-        checks if genre is needed anymore
-        """
-        self.c.execute('SELECT * FROM genre JOIN song_genre ON song_genre.genre_id = genre.genre_id WHERE genre.genre_name = ?', (genre, ))
-        if self.c.fetchone():
-            return True
-        else:
-            return False
-    
-    def remove_genre(self, genre_text):
-        """
-        Remove a genre from a song and completely if none are left
-        """
-        self.c.execute('SELECT genre_id FROM genre WHERE genre_name = ?',  (genre_text, ))
-        delgenreid = self.c.fetchone()['genre_id']
-        delete = (self.path, delgenreid)
-        self.c.execute('DELETE FROM song_genre WHERE song_path = ? AND genre_id = ?',  delete)
-        genre_needed = self.is_genre_needed(genre_text)
-        if not genre_needed:
-            self.c.execute('DELETE FROM genre WHERE genre_name = ?', (genre_text, ))
-        return genre_needed
-
-    def give_empty_genre(self, path):
-        """
-        If there are no genres left, it need an empty genre
-        """
-        self.c.execute('''SELECT genre_id from genre WHERE genre_name = "empty" ''')
-        genre_id = self.c.fetchone()['genre_id']
-        inserts = (path, genre_id)
-        self.c.execute('INSERT INTO song_genre VALUES(?,?)', inserts)
-
     def get_song(self, path):
         """
         get all infos from database for defined path
         """
-        self.c.execute('''SELECT song.title as title, song.album as album, song.comment as comment,  genre.genre_name as genre, interpreter.interpreter_name as interpreter,
+        self.c.execute('''SELECT song.song_id as song_id, song.title as title, song.album as album, song.comment as comment,  genre.genre_name as genre, artist.artist_name as artist,
                                                 song.length as length, song.times_played as times_played, song.rating as rating, song.bpm as bpm, song.year as year,
                                                 song.track as track, composer.composer_name as composer, song.cd as cd
                                     FROM song
                                     LEFT OUTER JOIN song_genre
-                                        ON song.path = song_genre.song_path
+                                        ON song.song_id = song_genre.song_id
                                     LEFT OUTER JOIN genre
                                         ON song_genre.genre_id = genre.genre_id
-                                    LEFT OUTER JOIN interpreter
-                                        ON song.interpreter_fk = interpreter.interpreter_id
+                                    LEFT OUTER JOIN artist
+                                        ON song.artist_fk = artist.artist_id
                                     LEFT OUTER JOIN composer
                                         ON song.composer_fk = composer.composer_id
-                                        WHERE song.path = ?''',  (path, ))
+                                        WHERE song.song_path = ?''',  (path, ))
         datas = self.c.fetchall()
         if not datas:
             return {}
@@ -122,21 +73,48 @@ class DBManager:
         """
         add song to db
         """
-        interpreter_id = self.get_or_create_interpreter_composer('interpreter', song.interpreter)["id"]
-        composer_id = self.get_or_create_interpreter_composer('composer', song.composer)["id"]
-        inserts = (song.raw_path, song.title, song.album, song.comment, song.length, song.times_played, song.rating, song.year, composer_id, interpreter_id, song.bpm, song.track, song.cd)
-        self.c.execute('INSERT INTO song VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', inserts)
-        self.add_genres(song.raw_path, song.genres)
+        artist_id = self.get_or_create_artist_composer('artist', song.artist)["id"]
+        composer_id = self.get_or_create_artist_composer('composer', song.composer)["id"]
+        inserts = (song.raw_path, song.title, song.album, song.comment, song.length, song.times_played, song.rating, song.year, composer_id, artist_id, song.bpm, song.track, song.cd)
+        self.c.execute('INSERT INTO song VALUES(Null,?,?,?,?,?,?,?,?,?,?,?,?,?)', inserts)
+        song.song_id = self.c.lastrowid
+        self.add_genres(song, song.genres)
     
     def update_song(self, song):
-        interpreter_id = self.get_or_create_interpreter_composer('interpreter', song.interpreter)["id"]
-        composer_id = self.get_or_create_interpreter_composer('composer', song.composer)["id"]
-        inserts = (song.title, song.album, interpreter_id, composer_id, song.raw_path)
-        self.c.execute('UPDATE song SET title=?, album=?, interpreter_fk=?, composer_fk=? WHERE path=?', inserts)
+        artist_id = self.get_or_create_artist_composer('artist', song.artist)["id"]
+        composer_id = self.get_or_create_artist_composer('composer', song.composer)["id"]
+        inserts = (song.title, song.album, artist_id, composer_id, song.comment, song.times_played, song.rating, song.song_id)
+        self.c.execute('UPDATE song SET title=?, album=?, artist_fk=?, composer_fk=?, comment=?, times_played=?, rating=? WHERE song_id=?', inserts)
 
-    def get_or_create_interpreter_composer(self, type, value):
+    def update_songs(self, song_dict):
+        """
+        save all changes of a dict of songs
+        """
+        for song in song_dict.values():
+            self.update_song(song)
+        self.commit()
+
+    def update_playlist(self, playlist, playlist_id, playlist_name, amount_played):
+        """
+        save all playlist changes in db
+        """
+        for song in playlist.values():
+            self.update_song(song)
+            self.c.execute("UPDATE song_playlist SET times_played=?, chance=? WHERE song_id=? AND playlist_id=?",(song.playlist_played, song.playlist_chance, song.song_id, playlist_id))
+        
+        self.c.execute("UPDATE playlist SET amount_played=?, playlist_name=? WHERE playlist_id=?",(amount_played, playlist_name, playlist_id))
+        self.commit()
+
+    def create_playlist(self, playlist, playlist_name, amount_played, playlist_section):
+        self.c.execute("INSERT INTO playlist VALUES(NULL,?,?,?)",(playlist_name, amount_played, playlist_section))
+        playlist_id = self.c.lastrowid
+        for song in playlist.values():
+            self.c.execute("INSERT INTO song_playlist VALUES(?,?,?,?)",(song.song_id, playlist_id, song.playlist_played, song.playlist_chance))
+        self.commit()
+
+    def get_or_create_artist_composer(self, type, value):
         '''
-        add AIC to db
+        get artist or composer or create it if not exists
         '''
         select_statement = f"{type}_id as id, {type}_name as name"
         name = type + "_name"
@@ -144,47 +122,91 @@ class DBManager:
         result = self.c.fetchone()
         if result:
             return result
-        ex = (None, value)
-        self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), ex)
+        self.c.execute('INSERT INTO {tb} VALUES(?,?)'.format(tb=type), (None, value))
         return {"id": self.c.lastrowid, "name": value}
 
-    def get_interpreter_composer_with_id(self, type, value):
+    def get_artist_composer_with_id(self, type, value):
         '''
-        get information of interpreter or composer
+        get information of artist or composer
         '''
         select_statement = f"{type}_id as id, {type}_name as name"
         name = type + "_id"
         self.c.execute('SELECT {select} FROM {table_name} WHERE {name}=?'.format(select=select_statement, table_name=type, name=name), (value, ))
         return self.c.fetchone()
 
-    def add_genres(self, path, genres):
+    def get_all_genres(self):
+        """
+        Get all Genres from all Songs
+        """
+        self.c.execute('SELECT genre_name as genre FROM genre')
+        return self.c.fetchall()
+
+    def get_all_genres_of_song(self, song):
+        """
+        get all genres of editing song
+        """
+        self.c.execute('''SELECT genre.genre_name as genre, genre.genre_id as id FROM genre 
+                                                JOIN song_genre 
+                                                    ON genre.genre_id = song_genre.genre_id 
+                                                    WHERE song_genre.song_id = ?''', (song.song_id, ))
+        return self.c.fetchall()
+
+    def is_genre_needed(self, genre):
+        """
+        checks if genre is needed anymore
+        """
+        self.c.execute('SELECT * FROM genre JOIN song_genre ON song_genre.genre_id = genre.genre_id WHERE genre.genre_name = ?', (genre, ))
+        if self.c.fetchone():
+            return True
+        else:
+            return False
+    
+    def remove_genre(self, genre_text, song):
+        """
+        Remove a genre from a song and completely if none are left
+        """
+        self.c.execute('SELECT genre_id FROM genre WHERE genre_name = ?',  (genre_text, ))
+        self.c.execute('DELETE FROM song_genre WHERE song_id = ? AND genre_id = ?',  (song.song_id, self.c.fetchone()['genre_id']))
+        genre_needed = self.is_genre_needed(genre_text)
+        if not genre_needed:
+            self.c.execute('DELETE FROM genre WHERE genre_name = ?', (genre_text, ))
+        return genre_needed
+
+    # Use add_genre_to_song instead
+    # def give_empty_genre(self, path):
+    #     """
+    #     If there are no genres left, it need an empty genre
+    #     """
+    #     self.c.execute('''SELECT genre_id from genre WHERE genre_name = "empty" ''')
+    #     genre_id = self.c.fetchone()['genre_id']
+    #     self.c.execute('INSERT INTO song_genre VALUES(?,?)', (path, genre_id))
+
+    def add_genres(self, song, genres):
         """
         go through all genres in a file and add them to the db
         """
         for genre in genres:
-            self.add_genre_to_song(path, genre)
+            self.add_genre_to_song(song, genre)
 
-    def add_genre_to_song(self, path, genre_name):
+    def add_genre_to_song(self, song, genre_name):
         """
         make the connections between song and genre or if it does not exist add the genre to the db and then make connection
         """
         genre_id = self.get_or_create_genre(genre_name)["genre_id"]
 
-        self.get_or_create_genre_song_connection(path, genre_id)
+        self.get_or_create_genre_song_connection(song, genre_id)
 
-    def get_or_create_genre_song_connection(self, path, genre_id):
+    def get_or_create_genre_song_connection(self, song, genre_id):
         """
         return genre_song connection or create if not exists
         """
-        tests = [path, genre_id]
-        self.c.execute('SELECT song_path, genre_id FROM song_genre WHERE song_path=? AND genre_id=?', tests)
+        self.c.execute('SELECT song_id, genre_id FROM song_genre WHERE song_id=? AND genre_id=?', (song.song_id, genre_id))
         result = self.c.fetchone()
         if result:
             return result
-        
-        insert = (path, genre_id)
-        self.c.execute("INSERT INTO song_genre VALUES (?,?)", insert)
-        return {"song_path": path, "genre_id": genre_id}
+
+        self.c.execute("INSERT INTO song_genre VALUES (?,?)", (song.song_id, genre_id))
+        return {"song_id": song.song_id, "genre_id": genre_id}
 
     def get_or_create_genre(self, genre_name):
         """
@@ -194,6 +216,9 @@ class DBManager:
         result = self.c.fetchone()
         if result:
             return result
-        gen = (None, genre_name)
-        self.c.execute("INSERT INTO genre VALUES (?,?)", gen)
+        self.c.execute("INSERT INTO genre VALUES (?,?)", (None, genre_name))
         return {"genre_id": self.c.lastrowid, "genre_name": genre_name}
+
+    def create_playlist_section(self, section_name, parent):
+        self.c.execute("INSERT INTO playlist_section VALUES (NULL,?,?)", (section_name, parent))
+        self.commit()

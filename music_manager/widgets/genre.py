@@ -13,16 +13,16 @@ class Genre(QDialog, Ui_genre):
     """
     handle genre editing with dialog
     """
-    def __init__(self, db, path, parent = None):
+    def __init__(self, db, song, parent = None):
         """
         Constructor
         """
         QDialog.__init__(self, parent)
         self.setupUi(self)
         self.db = db
-        self.path = path
+        self.song = song
         self.comboboxadd.lineEdit().returnPressed.connect(self.comboboxAddReturnPressed)
-        self.Sgenres = self.db.get_songAllGenres(path)
+        self.Sgenres = self.db.get_all_genres_of_song(song)
         self.genres = self.db.get_all_genres()
         self.set_list()
 

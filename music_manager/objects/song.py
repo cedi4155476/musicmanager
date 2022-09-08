@@ -28,21 +28,24 @@ class Song(object):
 
     def __init__(self, path, info):
         self.path = path
+        self.disabled = False
+        self.song_id = None
         self.raw_path = str(path.resolve())
         self.title = info.get("title")
         self.album = info.get("album")
-        self.interpreter = info.get("interpreter")
+        self.artist = info.get("artist")
+        self.composer = info.get("composer")
         self.comment = info.get("comment")
         self.genres = info.get("genres", [])
         self.length = info.get("length")
-        self.chance = info.get("chance", 0)
-        self.times_played = info.get("times_played", 0)
-        self.rating = info.get("rating", 20)
         self.cd = info.get("cd")
         self.track = info.get("track")
         self.bpm = info.get("bpm")
-        self.composer = info.get("composer")
         self.year = info.get("year")
+        self.times_played = info.get("times_played", 0)
+        self.rating = info.get("rating", 20)
+        self.playlist_played = 0
+        self.playlist_chance = 0
         
     def __eq__(self, other):
         return_value = True 
@@ -51,7 +54,7 @@ class Song(object):
         return_value = self.path == other.path and return_value
         return_value = self.title == other.title and return_value
         return_value = self.album == other.album and return_value
-        return_value = self.interpreter == other.interpreter and return_value
+        return_value = self.artist == other.artist and return_value
         return_value = self.comment == other.comment and return_value
         return_value = self.genres == other.genres and return_value
         return_value = self.length == other.length and return_value
@@ -64,22 +67,23 @@ class Song(object):
         return return_value
 
     def update_from_database(self, info):
+        self.song_id = info.song_id
         self.genres = info.genres
-        self.chance = info.chance
+        self.playlist_chance = info.playlist_chance
         self.times_played = info.times_played
         self.rating = info.rating
 
-    def update(self, title, album, interpreter, comment, rating):
+    def update(self, title, album, artist, comment, rating):
         self.title = title
         self.album = album
-        self.interpreter = interpreter
+        self.artist = artist
         self.comment = comment
         self.rating = rating
 
-    def updateInfos(self, track, cd, bpm, title, interpreter, composer, album, year, comment):
+    def updateInfos(self, track, cd, bpm, title, artist, composer, album, year, comment):
         self.title = title
         self.album = album
-        self.interpreter = interpreter
+        self.artist = artist
         self.comment = comment
         self.cd = cd
         self.track = track
@@ -87,20 +91,24 @@ class Song(object):
         self.composer = composer
         self.year = year
 
+    def disable(self):
+        self.disabled = True
+
     def set_rating(self, rating):
         self.rating = rating
 
-    def increasechance(self, amount_songs):
-        self.chance += int(pow(self.mapping[self.rating],2)) + amount_songs
+    def increase_chance(self, amount_songs):
+        self.playlist_chance += int(pow(self.mapping[self.rating],2)) + amount_songs
 
-    def decreasechance(self, count):
-        self.chance = 0
+    def decrease_chance(self, count):
+        self.playlist_chance = 0
 
     def update_times_played(self):
         self.times_played += 1
+        self.playlist_played += 1
 
     def get_chance(self):
-        return self.chance
+        return self.playlist_chance
 
     def get_title(self):
         return self.title
@@ -108,8 +116,8 @@ class Song(object):
     def get_album(self):
         return self.album
 
-    def get_interpreter(self):
-        return self.interpreter
+    def get_artist(self):
+        return self.artist
 
     def get_composer(self):
         return self.composer
@@ -126,8 +134,8 @@ class Song(object):
     def remove_genre(self,  genre):
         self.genres.remove(genre)
 
-    def get_all(self):
-        return {'path': self.path, 'title': self.title, 'album': self.album, 'interpreter': self.interpreter, 
-                'comment' : self.comment, 'genre': self.genres, 'length' : self.length, 'chance' : self.chance,
-                'times_played' : self.times_played, 'rating' : self.rating, 'track' : self.track, 'cd' : self.cd,
-                'bpm' : self.bpm, 'composer' : self.composer, 'year' : self.year}
+    # def get_all(self):
+    #     return {'path': self.path, 'title': self.title, 'album': self.album, 'artist': self.artist, 
+    #             'comment' : self.comment, 'genre': self.genres, 'length' : self.length, 'playlist_chance' : self.playlist_chance,
+    #             'times_played' : self.times_played, 'rating' : self.rating, 'track' : self.track, 'cd' : self.cd,
+    #             'bpm' : self.bpm, 'composer' : self.composer, 'year' : self.year}

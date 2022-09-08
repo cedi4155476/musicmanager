@@ -25,7 +25,7 @@ class SearchDialog(QDialog, Ui_Dialog):
         self.files = []
         self.path = None
         self.config = config
-        self.lineEditPath.setText(self.config.get_directory_path())
+        self.lineEditPath.setText(str(self.config.get_directory_path().resolve()))
 
     def get_path(self):
         return self.path

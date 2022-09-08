@@ -6,8 +6,8 @@ class MyProgressbar(QProgressBar):
     """
     progress bar with changable value
     """
-    releasePlay = pyqtSignal()
-    progressMovement = pyqtSignal(float)
+    release_play = pyqtSignal()
+    progress_movement = pyqtSignal(float)
 
     def __init__(self, parent=None):
         QProgressBar.__init__(self)
@@ -24,7 +24,7 @@ class MyProgressbar(QProgressBar):
             else:
                 self.x = e.pos().x() / float(self.width())
 
-            self.progressMovement.emit(self.x)
+            self.progress_movement.emit(self.x)
 
     def mouseReleaseEvent(self, e):
-        self.releasePlay.emit()
+        self.release_play.emit()

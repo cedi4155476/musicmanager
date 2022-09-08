@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QTableWidgetItem
+from PyQt5.QtCore import Qt
 
 class MainTable:
     def __init__(self):
@@ -8,7 +9,14 @@ class MainTable:
     def setup(self, song_handler, widget_handler):
         self.widget_handler = widget_handler
         self.song_handler = song_handler
-
+        
+    def get_table_item(self, song):
+        """
+        get the tablewidgetitem with song
+        """
+        for i in range(self.widget_handler.GUI.tableWidget.rowCount()):
+            if song.raw_path == self.widget_handler.GUI.tableWidget.item(i, 0).text():
+                return self.widget_handler.GUI.tableWidget.item(i, 0)
 
     def fill_table(self):
         """
@@ -31,10 +39,30 @@ class MainTable:
         self.widget_handler.GUI.tableWidget.setItem(row, 1, QTableWidgetItem(song.path.name))
         self.widget_handler.GUI.tableWidget.setItem(row, 2, QTableWidgetItem(song.title))
         self.widget_handler.GUI.tableWidget.setItem(row, 3, QTableWidgetItem(song.album))
-        self.widget_handler.GUI.tableWidget.setItem(row, 4, QTableWidgetItem(song.interpreter))
+        self.widget_handler.GUI.tableWidget.setItem(row, 4, QTableWidgetItem(song.artist))
         self.widget_handler.GUI.tableWidget.setItem(row, 5, QTableWidgetItem(', '.join(song.genres)))
         self.widget_handler.GUI.tableWidget.setItem(row, 6, QTableWidgetItem(song.times_played))
         self.widget_handler.GUI.tableWidget.setItem(row, 7, QTableWidgetItem(song.rating))
+
+    def update_row(self, song):
+        """
+        update row in table
+        """
+        row = self.get_table_item(song).row()
+        qpath = QTableWidgetItem(song.raw_path)
+        qname = QTableWidgetItem(song.path.name)
+        qtitle = QTableWidgetItem(song.title)
+        qalbum = QTableWidgetItem(song.album)
+        qinterpreter = QTableWidgetItem(song.interpreter)
+        qgenres = QTableWidgetItem(', '.join(song.genre))
+        qtimesplayed = QTableWidgetItem(song.timesplayed)
+        qrating = QTableWidgetItem(song.rating)
+
+        songs = [qpath, qname, qtitle, qalbum, qinterpreter, qgenres, qtimesplayed, qrating]
+
+        for i in range(self.tableWidget.columnCount()):
+            if i:
+                self.tableWidget.setItem(row, i, songs[i])
 
     def reload_table(self):
         """
@@ -46,3 +74,32 @@ class MainTable:
         for song in self.song_handler.filtersongs:
             self.add_line(song)
         self.widget_handler.GUI.tableWidget.setSortingEnabled(True)
+
+    def disable_row(self, song):
+        row = self.widget_handler.MAINTABLE.get_table_item(song).row()
+        for c in range(self.widget_handler.GUI.tableWidget.columnCount()):
+            item = self.widget_handler.GUI.tableWidget.item(row, c)
+            item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+        path = self.widget_handler.GUI.tableWidget.item(row, 0).text()
+        del self.song_handler.songs[path]
+
+    def table_widget_context_menu(self, pos):
+        """
+        create context menu for playlist tree
+        """
+        pass
+        # self.contextindex = self.tableWidget.indexAt(pos)
+        # if self.contextindex.isValid():
+        #     menu = QMenu(self)
+        #     menu.addAction('Edit', self.contextEditSong)
+        #     menu.exec_(self.tableWidget.mapToGlobal(pos))
+
+    def selection_changed(self, item):
+        path = self.widget_handler.GUI.tableWidget.item(item.row(),  0).text()
+        song = self.song_handler.songs.get(path)
+
+        if not song.path.exists():
+            self.disable_row(song)
+            return
+        self.widget_handler.SHORTEDIT.set_info(song)
+        self.widget_handler.GUI.tableWidget.scrollToItem(item)

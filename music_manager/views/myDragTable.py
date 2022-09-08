@@ -28,9 +28,9 @@ class MyDragTable(QTableWidget):
         bytearray = QByteArray()
         for item in list:
             if item.column() == 1:
-                bytearray.append(self.item(item.row(), 0).text() + '\\')
+                bytearray.append(self.item(item.row(), 0).text() + '*-_-*')
 
-        bytearray.chop(1)
+        bytearray.chop(5)
 
         mimeData = QMimeData()
         mimeData.setData('application/x-songlistdata', bytearray)

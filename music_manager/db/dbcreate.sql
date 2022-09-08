@@ -1,11 +1,11 @@
 BEGIN TRANSACTION;
 CREATE TABLE composer (composer_id INTEGER PRIMARY KEY, composer_name TEXT);
-CREATE TABLE interpreter (interpreter_id INTEGER PRIMARY KEY, interpreter_name TEXT);
+CREATE TABLE artist (artist_id INTEGER PRIMARY KEY, artist_name TEXT);
 CREATE TABLE genre (genre_id INTEGER PRIMARY KEY, genre_name TEXT);
 INSERT INTO genre VALUES(0, 'empty');
-CREATE TABLE song (path TEXT, title TEXT, album TEXT, comment TEXT, length INTEGER, times_played INTEGER, rating INTEGER, year TEXT, composer_fk INTEGER, interpreter_fk INTEGER, bpm INTEGER, track TEXT, cd TEXT);
-CREATE TABLE song_genre (song_path TEXT, genre_id INTEGER);
-CREATE TABLE playlist (playlist_id INTEGER PRIMARY KEY, playlist_name TEXT, parent INTEGER);
-INSERT INTO playlist VALUES(0, '', Null);
-CREATE TABLE song_playlist (playlist_id INTEGER, song_path TEXT, times_played INTEGER, chance INTEGER);
+CREATE TABLE song (song_id INTEGER PRIMARY KEY, song_path TEXT, title TEXT, album TEXT, comment TEXT, length INTEGER, times_played INTEGER, rating INTEGER, year TEXT, composer_fk INTEGER, artist_fk INTEGER, bpm INTEGER, track TEXT, cd TEXT);
+CREATE TABLE song_genre (song_id INTEGER, genre_id INTEGER);
+CREATE TABLE playlist (playlist_id INTEGER PRIMARY KEY, playlist_name TEXT, amount_played INTEGER, playlist_section_fk INTEGER);
+CREATE TABLE playlist_section (playlist_section_id INTEGER PRIMARY KEY, section_name TEXT, parent INTEGER);
+CREATE TABLE song_playlist (song_id INTEGER, playlist_id INTEGER, times_played INTEGER, chance INTEGER);
 COMMIT;
