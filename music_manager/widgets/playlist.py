@@ -3,43 +3,65 @@ from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 from random import randint
 
 from utils import show_error_box, show_confirmation_box
-from objects import PlaylistTreeItem, PlaylistTreeModel
+from objects import PlaylistTreeModel
 from exceptions import FileDeletedException
 
 class Playlist:
     def __init__(self, widget_handler, db):
         self.db = db
         self.playlist = {}
-        self.playlist_tree = {}
         self.RANDOMNESS = False
         self.playlist_name = ""
         self.playlist_id = None
         self.section_name = None
         self.section_id = None
+        self.selected_section_id = None
         self.amount_played = 0
         self.widget_handler = widget_handler
 
     def setup(self, song_handler):
         self.song_handler = song_handler
+        self.widget_handler.GUI.playlistLineEdit.textChanged.connect(self.playlist_name_changed)
+        self.create_tree()
 
     def close(self):
         self.update_db_playlist()
 
+    def playlist_name_changed(self, value):
+        self.playlist_name = value
+
     def reset_all(self):
         self.playlist = {}
-        self.playlist_name = ""
-        self.amount_played = 0
         self.RANDOMNESS = False
+        self.playlist_name = ""
+        self.playlist_id = None
+        self.section_name = None
+        self.section_id = None
+        self.selected_section_id = None
+        self.amount_played = 0
 
     def update_db_playlist(self):
         self.db.update_playlist(self.playlist, self.playlist_id, self.playlist_name, self.amount_played)
 
     def load_playlist(self, songs, playlist_name, amount_played):
-        self.reset_all()
         for song in songs:
             self.playlist[song.raw_path] = song
         self.playlist_name = playlist_name
         self.amount_played = amount_played
+
+
+        """
+        get data from playlist
+        """
+        tree = ET.parse(path)
+        root = tree.getroot()
+        songs = []
+        for child in root:
+            if child.tag == "name":
+                playlistname = child.attrib
+            elif child.tag == "song":
+                songs.append(child.attrib)
+        return playlistname, songs
 
     def get_playlist_item(self, song):
         """
@@ -173,14 +195,16 @@ class Playlist:
         """
         create the tree for the playlists
         """
-        self.model = PlaylistTreeModel()
+        self.model = PlaylistTreeModel((self.db.get_all_sections(),self.db.get_all_playlists()))
         self.widget_handler.GUI.playlistTreeView.setModel(self.model)
         self.widget_handler.GUI.playlistTreeView.hideColumn(1)
-        self.widget_handler.GUI.playlistTreeView.hideColumn(2)
         self.widget_handler.GUI.playlistTreeView.hideColumn(3)
         self.widget_handler.GUI.playlistTreeView.setHeaderHidden(True)
         self.widget_handler.GUI.playlistTreeView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.widget_handler.GUI.playlistTreeView.customContextMenuRequested.connect(self.widget_handler.GUI.playlistTreeContextMenu)
+        self.widget_handler.GUI.playlistTreeView.customContextMenuRequested.connect(self.playlist_tree_context_menu)
+
+    def update_playlist_tree_view(self):
+        pass
 
     def create_section(self):
         """
@@ -188,11 +212,8 @@ class Playlist:
         """
         if self.widget_handler.GUI.playlistFolderLineEdit.text():
             playlist_name = self.widget_handler.GUI.playlistFolderLineEdit.text()
-            section = None
-            if self.widget_handler.GUI.playlistTreeView.selectedIndexes():
-                index = self.widget_handler.GUI.playlistTreeView.selectedIndexes()[0]
-                section = self.get_section(index)
-            self.db.create_playlist_section(playlist_name, section)
+            self.db.create_playlist_section(playlist_name, self.selected_section_id)
+            self.update_playlist_tree_view()
         else:
             show_error_box("Missing section name!", "Please enter a section name")
 
@@ -220,7 +241,7 @@ class Playlist:
         get path of selected file or folder
         """
         print()
-        print(self.model.internalPointer(index))
+        print(self.model.index)
         print()
         # if self.model.internalPointer(index):
         #     repath.append(unicode(index.data().toString()))
@@ -271,48 +292,28 @@ class Playlist:
         """
         load a playlist file to active playlist
         """
-        if self.playlist and self.playlistLineEdit.text():
-            reply = QMessageBox.question(self, "Playlist overwrite", "Are you sure you want to overwrite the playlist?", QMessageBox.Yes|QMessageBox.No);
+        if self.playlist and self.widget_handler.GUI.playlistLineEdit.text():
+            reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-        self.playlistWidget.setRowCount(0)
-        self.playlist = {}
+        self.widget_handler.GUI.playlistWidget.setRowCount(0)
+        self.reset_all()
 
-        path = self.get_path(index)
-        path += unicode(index.data().toString())
-        playlistname, songs = self.load_playlist(path)
-        paths = []
-        self.playlistLineEdit.setText(playlistname['name'])
-        for song in songs:
-            paths.append(song['path'])
-        self.playlistAdd(paths, False)
-        self.playlistTab.setCurrentIndex(1)
+        self.playlist_id = self.model.get_id(index)
+        self.playlist_name = self.model.get_name(index)
+        self.section_id = self.model.get_parent(index)
+        database_songs = self.db.get_all_songs_from_playlist(self.playlist_id)
+        self.widget_handler.GUI.playlistLineEdit.setText(self.playlist_name)
 
-    def load_playlist(self, path):
-        """
-        get data from playlist
-        """
-        tree = ET.parse(path)
-        root = tree.getroot()
-        songs = []
-        for child in root:
-            if child.tag == "name":
-                playlistname = child.attrib
-            elif child.tag == "song":
-                songs.append(child.attrib)
-        return playlistname, songs
+        for song in database_songs:
+            self.playlist_add_song(self.song_handler.get_or_create_song_from_playlist(song))
+        self.widget_handler.GUI.playlistTab.setCurrentIndex(1)
 
     def create_playlist(self):
         """
         create a new playlist and save it
         """
-        if self.widget_handler.GUI.playlistTreeView.selectedIndexes():
-            section = self.get_section(self.widget_handler.GUI.playlistTreeView.selectedIndexes()[0])
-        else:
-            section = None
-        playlist_name = self.widget_handler.GUI.playlistLineEdit.text()
-
-        if not playlist_name:
+        if not self.playlist_name:
             show_error_box("No Playlist Name", "Please insert a name for the before saving playlist!")
             return
         
@@ -320,15 +321,19 @@ class Playlist:
             show_error_box("No Songs Selected", "Please Drag and Drop some songs in the first Playlist!")
             return
 
-        if self.db.get_playlist_by_name(section):
+        if self.section_id:
+            section_id = self.section_id
+        else:
+            section_id = self.selected_section_id
+        if self.db.get_playlist_by_name(self.playlist_name, section_id):
             reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section)
+            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
         else:
-            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section)
+            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
 
-    def tableToPlaylist(self):
+    def table_to_playlist(self):
         """
         send edit table to playlist
         """
@@ -353,3 +358,22 @@ class Playlist:
         self.playlistWidget.setCurrentItem(item)
         self.playlistWidget.setFocus()
         self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
+
+    def playlist_tree_context_menu(self, pos):
+        """
+        create context menu for playlist tree
+        """
+        index = self.playlistTreeView.indexAt(pos)
+        if index.isValid():
+            menu = QMenu(self)
+            menu.addAction('loeschen', self.delete_selectedFile)
+            if self.model.isDir(index):
+                menu.addAction('Playlist erstellen', self.switchPlaylistTab)
+            menu.exec_(self.playlistTreeView.mapToGlobal(pos))
+
+    def tree_view_double_clicked(self, index):
+        if self.model.is_section(index):
+            self.widget_handler.GUI.playlistTab.setCurrentIndex(1)
+            self.selected_section_id = self.model.get_id(index)
+        else:
+            self.load_playlist_from_db(index)

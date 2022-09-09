@@ -153,24 +153,21 @@ class GUI(QMainWindow, Ui_MainWindow):
         """
         create playlist in clicked folder or load playlist
         """
-        if self.model.isDir(index):
-            self.playlistTab.setCurrentIndex(1)
-        else:
-            self.loadFileToPlaylist(index)
+        self.widget_handler.PLAYLIST.tree_view_double_clicked(index)
 
     @pyqtSlot()
     def on_playlistCreateFolderButton_clicked(self):
         """
         create folder
         """
-        self.widget_handler.PLAYLIST.create_folder()
+        self.widget_handler.PLAYLIST.create_section()
 
-    # @pyqtSlot()
-    # def on_playlistSearchButton_clicked(self):
-    #     """
-    #     search playlist or folder
-    #     """
-    #     self.search_playlist()
+    @pyqtSlot()
+    def on_playlistSearchButton_clicked(self):
+        """
+        search playlist or folder
+        """
+        self.search_playlist()
 
     @pyqtSlot()
     def on_playlistFolderLineEdit_returnPressed(self):

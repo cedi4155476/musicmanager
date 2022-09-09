@@ -64,6 +64,16 @@ class SongHandler:
             show_error_box("loading Error", f"{str(len(load_errors))} file(s) failed to load \n Maybe the file(s) do not exist anymore.\n More infos about the files in tmp/error.log file")
             load_errors = []
 
+    def get_or_create_song_from_playlist(self, song):
+        for s in self.songs.values():
+            if s.song_id == song["song_id"]:
+                s.playlist_played = song["times_played"]
+                s.playlist_chance = song["chance"]
+                return s
+            
+        raw_database_song_info = self.db.get_song_with_id(song["song_id"])
+        return Song(raw_database_song_info["song_path"], raw_database_song_info)
+
     def read_file_info(self, path):
         """
         get the fileinfos

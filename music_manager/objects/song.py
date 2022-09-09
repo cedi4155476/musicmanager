@@ -29,7 +29,7 @@ class Song(object):
     def __init__(self, path, info):
         self.path = path
         self.disabled = False
-        self.song_id = None
+        self.song_id = info.get("song_id")
         self.raw_path = str(path.resolve())
         self.title = info.get("title")
         self.album = info.get("album")

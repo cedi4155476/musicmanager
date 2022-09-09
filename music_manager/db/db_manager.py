@@ -222,3 +222,21 @@ class DBManager:
     def create_playlist_section(self, section_name, parent):
         self.c.execute("INSERT INTO playlist_section VALUES (NULL,?,?)", (section_name, parent))
         self.commit()
+        return self.c.lastrowid
+
+    def get_all_sections(self):
+        self.c.execute("SELECT playlist_section_id, section_name, parent from playlist_section ORDER BY playlist_section_id asc")
+        return self.c.fetchall()
+
+    def get_all_playlists(self):
+        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist")
+        return self.c.fetchall()
+
+    def get_playlist_by_name(self, name, section):
+        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk=?",(name, section))
+        return self.c.fetchone()
+
+    def get_all_songs_from_playlist(self, playlist_id):
+        self.c.execute("SELECT song_id, times_played, chance from song_playlist where playlist_id=?",(playlist_id, ))
+        return self.c.fetchall()
+        
