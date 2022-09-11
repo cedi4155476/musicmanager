@@ -18,12 +18,12 @@ class WidgetHandler:
         self.SEARCH = widgets.SearchDialog(config, parent)
         return self.SEARCH
     
-    def get_edit(self, db, path, song, parent = None):
-        self.EDIT = widgets.Edit(self, db, path, song)
+    def get_edit(self, db, song, parent = None):
+        self.EDIT = widgets.Edit(self, db, song)
         return self.EDIT
 
-    def get_genre(self, db, path, parent = None):
-        return widgets.Genre(db, path, parent)
+    def get_genre_dialog(self, db, song):
+        return widgets.Genre(db, song)
     
     def get_loading(self, max):
         return widgets.Loading(max)

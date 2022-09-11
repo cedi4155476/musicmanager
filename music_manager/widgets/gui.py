@@ -83,6 +83,20 @@ class GUI(QMainWindow, Ui_MainWindow):
         """
         self.tray_menu.popup(QCursor.pos())
 
+    # PYQT FUNCTION
+    def closeEvent(self, event):
+        """
+        handle the close event and stop music and save volume
+        """
+        if self.widget_handler.MUSICPLAYER.isVisible() or self.musicdock.isVisible():
+            self.hide()
+        else:
+            self.widget_handler.MUSICPLAYER.close()
+            self.widget_handler.PLAYLIST.close()
+            QApplication.quit()
+            event.accept()
+        event.ignore()
+
     @pyqtSlot("QAction*")
     def on_menuBar_triggered(self, action):
         """
@@ -103,19 +117,61 @@ class GUI(QMainWindow, Ui_MainWindow):
         elif action.text() == "Info":
             self.widget_handler.INFO.show()
 
-    # PYQT FUNCTION
-    def closeEvent(self, event):
+    @pyqtSlot("QTableWidgetItem*")
+    def on_tableWidget_itemDoubleClicked(self, item):
         """
-        handle the close event and stop music and save volume
+        add all edit songs to playlist and play song if user double clicks an edit item
         """
-        if self.widget_handler.MUSICPLAYER.isVisible() or self.musicdock.isVisible():
-            self.hide()
-        else:
-            self.widget_handler.MUSICPLAYER.close()
-            self.widget_handler.PLAYLIST.close()
-            QApplication.quit()
-            event.accept()
-        event.ignore()
+        self.tableToPlaylist()
+        self.playCurrentSong()
+
+    @pyqtSlot()
+    def on_genreButton_clicked(self):
+        """
+        change genres for selected song
+        """
+        self.widget_handler.SHORTEDIT.genre_button_clicked()
+
+    @pyqtSlot()
+    def on_saveButton_clicked(self):
+        """
+        save changes for song
+        """
+        self.widget_handler.SHORTEDIT.save()
+
+    @pyqtSlot()
+    def on_resetallbutton_clicked(self):
+        """
+        shuffle playlist
+        """
+        self.widget_handler.PLAYLIST.shuffle()
+
+    @pyqtSlot()
+    def on_playallbutton_clicked(self):
+        """
+        play playlist
+        """
+        if self.widget_handler.PLAYLIST.playlist:
+            if not self.playlistWidget.selectedIndexes():
+                self.playlistWidget.setFocus()
+                self.playlistWidget.setCurrentCell(0, 1)
+            self.widget_handler.MUSICPLAYER.play_selected_song()
+
+    @pyqtSlot()
+    def on_playbutton_clicked(self):
+        """
+        play playlist in random mode
+        """
+        self.start_randomplay()
+
+    @pyqtSlot()
+    def on_playbutton_2_clicked(self):
+        """
+        start playing
+        """
+        if not self.player.playing:
+            self.playPlayer()
+            self.playing = True
 
     @pyqtSlot()
     def on_filterResetButton_clicked(self):

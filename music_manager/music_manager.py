@@ -22,6 +22,7 @@ class MusicManager:
         self.widget_handler.MAINTABLE.setup(self.song_handler, self.widget_handler)
         self.widget_handler.FILTER.setup(self.song_handler, self.widget_handler)
         self.widget_handler.PLAYLIST.setup(self.song_handler)
+        self.widget_handler.SHORTEDIT.setup(self.song_handler)
 
     def launch(self):
         app = QApplication(sys.argv)
@@ -76,7 +77,7 @@ class MusicManager:
         paths = list(x for x in self.config.get_directory_path().iterdir() if x.is_file())
         self.song_handler.load_raw_songs(paths)
         self.widget_handler.MAINTABLE.fill_table()
-        self.widget_handler.FILTER.get_allBoxes()
+        self.widget_handler.FILTER.get_all_checkboxes()
     
     def change_directory(self):
         self.db.update_playlist(self.widget_handler.PLAYLIST.playlist, self.widget_handler.PLAYLIST.name)

@@ -83,6 +83,10 @@ class MainTable:
         path = self.widget_handler.GUI.tableWidget.item(row, 0).text()
         del self.song_handler.songs[path]
 
+    def get_selected_song(self):
+        item = self.widget_handler.GUI.tableWidget.item(self.widget_handler.GUI.tableWidget.currentRow(), 0)
+        return self.song_handler.get_song_by_path(item.text())
+
     def table_widget_context_menu(self, pos):
         """
         create context menu for playlist tree

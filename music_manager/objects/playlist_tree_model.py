@@ -92,14 +92,12 @@ class PlaylistTreeModel(QAbstractItemModel):
             else:
                 section_parent = self.rootItem.find_section(obj["parent"])
             section_parent.appendChild([self.folder_icon]+list(obj.values()), True)
-            self.dataChanged.emit(self.root_index,self.get_index_from_id(obj["playlist_section_id"], section))
         else:
             if not obj["playlist_section_fk"]:
                 section_parent = self.rootItem
             else:
                 section_parent = self.rootItem.find_section(obj["playlist_section_fk"])
             section_parent.appendChild([self.playlist_icon]+list(obj.values()), False)
-            self.dataChanged.emit(self.root_index,self.get_index_from_id(obj["playlist_id"], section))
         self.layoutChanged.emit()
 
     def get_index_from_id(self, child_id, section, index = QModelIndex()):

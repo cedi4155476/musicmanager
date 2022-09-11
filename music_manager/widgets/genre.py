@@ -21,16 +21,10 @@ class Genre(QDialog, Ui_genre):
         self.setupUi(self)
         self.db = db
         self.song = song
-        self.comboboxadd.lineEdit().returnPressed.connect(self.comboboxAddReturnPressed)
+        self.comboboxadd.lineEdit().returnPressed.connect(self.on_buttonadd_clicked)
         self.Sgenres = self.db.get_all_genres_of_song(song)
         self.genres = self.db.get_all_genres()
         self.set_list()
-
-    def comboboxAddReturnPressed(self):
-        """
-        add genre if return is pressed in text field
-        """
-        self.on_buttonadd_clicked()
 
     def set_list(self):
         """
@@ -45,7 +39,7 @@ class Genre(QDialog, Ui_genre):
         self.comboboxdel.addItems(Sgenres_name)
 
         for genre in self.genres:
-            if not Sgenres_name.contains(genre['genre']):
+            if not genre['genre'] in Sgenres_name:
                 if genre['genre'] != "empty":
                     genres_name.append(genre['genre'])
         self.comboboxadd.addItems(genres_name)
@@ -56,45 +50,42 @@ class Genre(QDialog, Ui_genre):
         genre is removed from song and if not needed, deleted
         """
         if self.comboboxdel.currentText():
+            current_index = self.comboboxdel.currentIndex()
             current_text = self.comboboxdel.currentText()
-            genre_needed = self.db.remove_genre(current_text)
+            genre_needed = self.db.remove_genre(current_text, self.song)
 
             if genre_needed:
+                self.comboboxadd.addItem(current_text)
                 self.comboboxdel.removeItem(self.comboboxdel.currentIndex())
             else:
-                self.comboboxadd.addItem(current_text)
                 self.comboboxdel.removeItem(self.comboboxdel.currentIndex())
 
             if not self.comboboxdel.currentText():
-                self.db.give_empty_genre(self.path)
+                self.db.add_genre_to_song(self.song, "empty")
+            self.comboboxdel.setCurrentIndex(current_index)
 
     @pyqtSlot()
     def on_buttonadd_clicked(self):
         """
         genre added to song and if not exists, created
         """
-        if self.comboboxadd.currentText():
-            if not self.comboboxdel.currentText():
-                self.c.execute('''SELECT genre_ID FROM genre WHERE genre_name = "empty" ''')
-                delgenreID = self.c.fetchone()['genre_ID']
-                delete = (self.path, delgenreID)
-                self.c.execute('DELETE FROM music_genre WHERE music_path = ? AND genre_ID = ?',  delete)
+        if not self.comboboxadd.currentText():
+            return
 
-            currentText = self.comboboxadd.currentText()
-            if not self.db.genreExists(currentText):
-                genreadd = (None, currentText)
-                self.c.execute('''INSERT INTO genre VALUES (?,?) ''',  genreadd)
+        current_index = self.comboboxadd.currentIndex()
+        if not self.comboboxdel.currentText():
+            self.db.remove_genre("empty", self.song)
 
-            if self.comboboxdel.findText(currentText) < 0:
-                self.c.execute('SELECT genre_ID from genre WHERE genre_name = ?', (currentText, ))
-                genre_ID = self.c.fetchone()['genre_ID']
-                inserts = (self.path, genre_ID)
-                self.c.execute('INSERT INTO music_genre VALUES(?,?)', inserts)
-                self.comboboxdel.addItem(currentText)
-                index = self.comboboxadd.findText(currentText)
-                if index >= 0:
-                    self.comboboxadd.removeItem(index)
-                self.comboboxadd.clearEditText()
+        genre_name = self.comboboxadd.currentText()
+        self.db.add_genre_to_song(self.song, genre_name)
+
+        if self.comboboxdel.findText(genre_name) < 0:
+            self.comboboxdel.addItem(genre_name)
+            index = self.comboboxadd.findText(genre_name)
+            if index >= 0:
+                self.comboboxadd.removeItem(index)
+            self.comboboxadd.clearEditText()
+        self.comboboxadd.setCurrentIndex(current_index)
 
     @pyqtSlot()
     def on_buttonfinish_clicked(self):

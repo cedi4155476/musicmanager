@@ -187,7 +187,7 @@ class DBManager:
         """
         get all genres of editing song
         """
-        self.c.execute('''SELECT genre.genre_name as genre, genre.genre_id as id FROM genre 
+        self.c.execute('''SELECT genre.genre_id as id, genre.genre_name as genre FROM genre 
                                                 JOIN song_genre 
                                                     ON genre.genre_id = song_genre.genre_id 
                                                     WHERE song_genre.song_id = ?''', (song.song_id, ))
@@ -208,20 +208,13 @@ class DBManager:
         Remove a genre from a song and completely if none are left
         """
         self.c.execute('SELECT genre_id FROM genre WHERE genre_name = ?',  (genre_text, ))
-        self.c.execute('DELETE FROM song_genre WHERE song_id = ? AND genre_id = ?',  (song.song_id, self.c.fetchone()['genre_id']))
+        self.c.execute('DELETE FROM song_genre WHERE song_id = ? AND genre_id = ?', (song.song_id, self.c.fetchone()['genre_id']))
+        if genre_text == "empty":
+            return True
         genre_needed = self.is_genre_needed(genre_text)
         if not genre_needed:
             self.c.execute('DELETE FROM genre WHERE genre_name = ?', (genre_text, ))
         return genre_needed
-
-    # Use add_genre_to_song instead
-    # def give_empty_genre(self, path):
-    #     """
-    #     If there are no genres left, it need an empty genre
-    #     """
-    #     self.c.execute('''SELECT genre_id from genre WHERE genre_name = "empty" ''')
-    #     genre_id = self.c.fetchone()['genre_id']
-    #     self.c.execute('INSERT INTO song_genre VALUES(?,?)', (path, genre_id))
 
     def add_genres(self, song, genres):
         """

@@ -15,7 +15,7 @@ class Filter:
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
 
-    def get_allBoxes(self):
+    def get_all_checkboxes(self):
         """
         removes then creates all boxes for filtering
         """
@@ -37,6 +37,8 @@ class Filter:
         self.get_file_informations()
 
         self.create_all_checkboxes()
+
+        self.check_checkboxes()
 
     def get_file_informations(self):
         """
@@ -62,7 +64,7 @@ class Filter:
         checkBox.setObjectName(text)
         layout.addWidget(checkBox)
         checkBox.setText(text)
-        checkBox.stateChanged.connect(self.checkCheckboxes)
+        checkBox.stateChanged.connect(self.check_checkboxes)
         self.checkboxes.append(checkBox)
 
     def create_all_checkboxes(self):
@@ -96,11 +98,11 @@ class Filter:
             self.widget_handler.GUI.aspacerItem = QSpacerItem(70, 20, QSizePolicy.Minimum, QSizePolicy.Expanding)
             self.widget_handler.GUI.albumLayout.addSpacerItem(self.widget_handler.GUI.aspacerItem)
 
-    def checkCheckboxes(self):
+    def check_checkboxes(self):
         """
         checks all checkboxes and shows the filtered ones
         """
-        activated_checkboxes = self.checkBoxTypes()
+        activated_checkboxes = self.checkbox_types()
         self.song_handler.filtersongs = []
         if not activated_checkboxes:
             self.widget_handler.MAINTABLE.fill_table()
@@ -110,7 +112,7 @@ class Filter:
                 self.song_handler.filtersongs.append(song)
         self.widget_handler.MAINTABLE.reload_table()
 
-    def checkBoxTypes(self):
+    def checkbox_types(self):
         """
         checks how many checkboxes are active and which types
         """

@@ -23,16 +23,10 @@ class EventHandler(QObject):
         """
         self.widget_handler.GUI.playlistSearchLineEdit.view().listviewclose.connect(self.widget_handler.GUI.playlistSearchLineEdit.hidePopup)
         self.widget_handler.GUI.playlistWidget.playlistInfo.connect(self.widget_handler.PLAYLIST.playlist_add_paths)
-        self.widget_handler.GUI.tableWidget.returnpressed.connect(self.tableWidgetReturnPressed)
+        self.widget_handler.GUI.tableWidget.returnpressed.connect(self.widget_handler.PLAYLIST.table_to_playlist)
         self.widget_handler.GUI.playlistSearchLineEdit.lineEdit().returnPressed.connect(self.widget_handler.PLAYLIST.search_playlist)
         self.widget_handler.GUI.timebar.release_play.connect(self.widget_handler.MUSICPLAYER.release_play)
         self.widget_handler.GUI.timebar.progress_movement.connect(self.widget_handler.MUSICPLAYER.progress_movement)
-
-    def tableWidgetReturnPressed(self):
-        """
-        add all edit songs to playlist and play song if enter is pressed in edit table
-        """
-        self.widget_handler.GUI.on_tableWidget_itemDoubleClicked(self.tableWidget.currentItem())
 
     def eventFilter(self, source, e):
         """

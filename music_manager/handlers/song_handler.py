@@ -14,6 +14,7 @@ class SongHandler:
         self.db = db
         self.widget_handler = widget_handler
         self.songs = {}
+        self.filtered_songs = []
 
     def load_raw_songs(self, paths):
         """
@@ -73,6 +74,14 @@ class SongHandler:
             
         raw_database_song_info = self.db.get_song_with_id(song["song_id"])
         return Song(raw_database_song_info["song_path"], raw_database_song_info)
+
+    def get_filtered_songs(self):
+        if self.filtered_songs:
+            return self.filtered_songs
+        return self.songs.values()
+
+    def get_song_by_path(self, path):
+        return self.songs[path]
 
     def read_file_info(self, path):
         """
@@ -164,7 +173,7 @@ class SongHandler:
             audio.add_tags()
         genres = []
 
-        for genre in song.genre:
+        for genre in song.genres:
             genres.append(genre)
 
         audio["title"] = song.title

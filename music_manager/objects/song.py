@@ -80,6 +80,12 @@ class Song(object):
         self.comment = comment
         self.rating = rating
 
+    def update_genres(self, genres_raw):
+        genres = []
+        for genre in genres_raw:
+            genres.append(genre["genre"])
+        self.genres = genres
+
     def updateInfos(self, track, cd, bpm, title, artist, composer, album, year, comment):
         self.title = title
         self.album = album

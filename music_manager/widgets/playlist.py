@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
-from random import randint
+from random import randint, shuffle
 from soupsieve import select
 
 from utils import show_error_box, show_confirmation_box
@@ -43,26 +43,6 @@ class Playlist:
 
     def update_db_playlist(self):
         self.db.update_playlist(self.playlist, self.playlist_id, self.playlist_name, self.amount_played)
-
-    def load_playlist(self, songs, playlist_name, amount_played):
-        for song in songs:
-            self.playlist[song.raw_path] = song
-        self.playlist_name = playlist_name
-        self.amount_played = amount_played
-
-
-        """
-        get data from playlist
-        """
-        tree = ET.parse(path)
-        root = tree.getroot()
-        songs = []
-        for child in root:
-            if child.tag == "name":
-                playlistname = child.attrib
-            elif child.tag == "song":
-                songs.append(child.attrib)
-        return playlistname, songs
 
     def get_playlist_item(self, song):
         """
@@ -134,6 +114,7 @@ class Playlist:
         self.decrease_chance(song)
         self.increase_chance(song)
         self.amount_played += 1
+        self.update_db_playlist()
         return song
 
     def increase_chance(self, played_song):
@@ -314,9 +295,10 @@ class Playlist:
             reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
-        else:
-            self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
+        playlist_id = self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
+
+        playlist = {"playlist_id": playlist_id, "playlist_name": self.playlist_name, "playlist_section_fk": section_id}
+        self.add_item_playlist_tree_view(playlist, False)
 
     def table_to_playlist(self):
         """
@@ -327,22 +309,18 @@ class Playlist:
             if reply == QMessageBox.No:
                 return
         self.widget_handler.GUI.playlistWidget.setRowCount(0)
+        self.update_db_playlist()
         self.playlist = {}
-        if self.filtersongs:
-            songs = []
-            for song in self.filtersongs:
-                songs.append(song.get_path())
+        songs = self.song_handler.get_filtered_songs()
 
-        else:
-            songs = self.song_handler.songs
-
-        for path in songs:
-            paths.append(path)
-        self.playlistAdd(paths, False)
-        item = self.get_playlistItemWithPath(self.Spath)
-        self.playlistWidget.setCurrentItem(item)
-        self.playlistWidget.setFocus()
-        self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
+        self.playlist_add_songs(songs)
+        for song in songs:
+            self.playlist[song.raw_path] = song
+        song = self.widget_handler.MAINTABLE.get_selected_song()
+        item = self.get_playlist_item(song)
+        self.widget_handler.GUI.playlistWidget.setCurrentItem(item)
+        self.widget_handler.GUI.playlistWidget.setFocus()
+        self.widget_handler.GUI.playlistWidget.setCurrentCell(self.widget_handler.GUI.playlistWidget.currentRow(), 1)
 
     def playlist_tree_context_menu(self, pos):
         """
@@ -362,3 +340,13 @@ class Playlist:
             self.selected_section_id = self.model.get_id(index)
         else:
             self.load_playlist_from_db(index)
+
+    def shuffle(self):
+        if self.playlist:
+            self.widget_handler.GUI.playlistWidget.setRowCount(0)
+            songs = list(self.playlist.values())
+            shuffle(songs)
+            self.playlist = {}
+            self.playlist_add_songs(songs)
+            self.widget_handler.GUI.playlistWidget.setFocus()
+            self.widget_handler.GUI.playlistWidget.setCurrentCell(0, 1)
