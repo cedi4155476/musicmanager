@@ -38,25 +38,27 @@ class EventHandler(QObject):
         """
         filter events
         """
-        # if source == self.playlistWidget:
-        #     if e.type() == QEvent.KeyPress:
-        #         if e.key() == Qt.Key_Return:
-        #             self.playCurrentSong()
-        #             self.playlistWidget.setCurrentCell(self.playlistWidget.currentRow(), 1)
-        #         elif e.key() == Qt.Key_Delete:
-        #             if source.selectedItems():
-        #                 rows = []
-        #                 for i in source.selectedIndexes():
-        #                     rows.append(i.row())
-        #                 rows = list(set(rows))
+        if source == self.widget_handler.GUI.playlistWidget:
+            if e.type() == QEvent.KeyPress:
+                if e.key() == Qt.Key_Return:
+                    self.playCurrentSong()
+                    self.playlistWidget.setCurrentCell(self.widget_handler.GUI.playlistWidget.currentRow(), 1)
+                elif e.key() == Qt.Key_Delete:
+                    if source.selectedItems():
+                        rows = []
+                        for i in source.selectedIndexes():
+                            rows.append(i.row())
+                        rows = list(set(rows))
 
-        #                 for row in reversed(rows):
-        #                     source.removeRow(row)
+                        for row in reversed(rows):
+                            print(row)
+                            print(row[1])
+                        #     source.removeRow(row)
 
-        # if source == self.playlistTreeView:
-        #     if e.type() == QEvent.KeyPress:
-        #         if e.key() == Qt.Key_Delete:
-        #             self.delete_selectedFile()
+        if source == self.widget_handler.GUI.playlistTreeView:
+            if e.type() == QEvent.KeyPress:
+                if e.key() == Qt.Key_Delete:
+                    self.widget_handler.PLAYLIST.delete_selected_file()
 
         # if source == self.musicdock:
         #     if e.type() == QEvent.Close:

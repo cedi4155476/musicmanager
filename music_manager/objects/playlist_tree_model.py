@@ -10,7 +10,8 @@ class PlaylistTreeModel(QAbstractItemModel):
         self.rootItem = PlaylistTreeItem(("icon","id","name","parent"))
         self.folder_icon = QIcon('resources/folder_icon.png')
         self.playlist_icon = QIcon('resources/playlist_icon.png')
-        self.setup_model_data(data, self.rootItem)
+        self.root_index = self.index(0,0,QModelIndex())
+        self.setup_model_data(data)
     
     def __del__(self):
         del self.rootItem
@@ -75,32 +76,70 @@ class PlaylistTreeModel(QAbstractItemModel):
             return self.rootItem.data(section)
         return QVariant()
 
-    def setup_model_data(self, data, parent):
+    def setup_model_data(self, data):
         sections = data[0]
         playlists = data[1]
         for section in sections:
-            if not section["parent"]:
-                section_parent = parent
-            else:
-                section_parent = parent.find_section(section["parent"])
-            section_parent.appendChild([self.folder_icon]+list(section.values()), True)
+            self.add_item(section, True)
         for playlist in playlists:
-            if not playlist["playlist_section_fk"]:
-                section_parent = parent
+            self.add_item(playlist, False)
+
+    def add_item(self, obj, section):
+        self.layoutAboutToBeChanged.emit()
+        if section:
+            if not obj["parent"]:
+                section_parent = self.rootItem
             else:
-                section_parent = parent.find_section(playlist["playlist_section_fk"])
-            section_parent.appendChild([self.playlist_icon]+list(playlist.values()), False)
+                section_parent = self.rootItem.find_section(obj["parent"])
+            section_parent.appendChild([self.folder_icon]+list(obj.values()), True)
+            self.dataChanged.emit(self.root_index,self.get_index_from_id(obj["playlist_section_id"], section))
+        else:
+            if not obj["playlist_section_fk"]:
+                section_parent = self.rootItem
+            else:
+                section_parent = self.rootItem.find_section(obj["playlist_section_fk"])
+            section_parent.appendChild([self.playlist_icon]+list(obj.values()), False)
+            self.dataChanged.emit(self.root_index,self.get_index_from_id(obj["playlist_id"], section))
+        self.layoutChanged.emit()
+
+    def get_index_from_id(self, child_id, section, index = QModelIndex()):
+        if index.isValid():
+            parent = index.internalPointer()
+        else:
+            parent = self.rootItem
+        for i in range(parent.childCount()):
+            child = parent.child(i)
+            if child.data(1) == child_id and child.is_section() == section:
+                return self.index(i, 1, index)
+            in_child = self.get_index_from_id(child_id, section, self.index(i, 1, index))
+            if in_child:
+                return in_child
+        return
+
+    def remove_child(self, index):
+        self.beginRemoveRows(index.parent(), index.row(), index.row())
+        self.removeRow(index.row(), parent=index.parent())
+        self.endRemoveRows()
+
+    def removeRow(self, row, parent):
+        if not parent.isValid():
+            parentItem = self.rootItem
+        else:
+            parentItem = parent.internalPointer()
         
+        parentItem.remove_child(row)
+        return True
+
     def get_id(self, index):
         if not index.isValid():
             return False
         return index.internalPointer().data(1)
-        
+
     def get_name(self, index):
         if not index.isValid():
             return False
         return index.internalPointer().data(2)
-        
+
     def get_parent(self, index):
         if not index.isValid():
             return False
@@ -109,4 +148,4 @@ class PlaylistTreeModel(QAbstractItemModel):
     def is_section(self, index):
         if not index.isValid():
             return False
-        return index.internalPointer().is_section
+        return index.internalPointer().is_section()

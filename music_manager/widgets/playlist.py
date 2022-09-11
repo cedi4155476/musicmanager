@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 from random import randint
+from soupsieve import select
 
 from utils import show_error_box, show_confirmation_box
 from objects import PlaylistTreeModel
@@ -203,57 +204,41 @@ class Playlist:
         self.widget_handler.GUI.playlistTreeView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.widget_handler.GUI.playlistTreeView.customContextMenuRequested.connect(self.playlist_tree_context_menu)
 
-    def update_playlist_tree_view(self):
-        pass
+    def add_item_playlist_tree_view(self, object, section):
+        self.model.add_item(object, section)
 
     def create_section(self):
         """
-        create a new folder for playlists
+        create a new section for playlists
         """
         if self.widget_handler.GUI.playlistFolderLineEdit.text():
-            playlist_name = self.widget_handler.GUI.playlistFolderLineEdit.text()
-            self.db.create_playlist_section(playlist_name, self.selected_section_id)
-            self.update_playlist_tree_view()
+            section_name = self.widget_handler.GUI.playlistFolderLineEdit.text()
+            section_id = self.db.create_playlist_section(section_name, self.selected_section_id)
+            section = {"playlist_section_id": section_id, "section_name": section_name, "parent": self.selected_section_id}
+            self.add_item_playlist_tree_view(section,True)
         else:
             show_error_box("Missing section name!", "Please enter a section name")
 
-    def delete_selectedFile(self):
+    def delete_selected_file(self):
         """
-        delete a folder or playlist in playlist tree
+        delete a section or playlist in playlist tree
         """
-        if self.playlistTreeView.selectedIndexes():
-            index = self.playlistTreeView.selectedIndexes()[0]
-            path = self.get_path(index)
-            if self.model.isDir(index):
-                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the directory?\n All files and directories in it will be deleted.", QMessageBox.Yes|QMessageBox.No);
+        if self.widget_handler.GUI.playlistTreeView.selectedIndexes():
+            index = self.widget_handler.GUI.playlistTreeView.selectedIndexes()[0]
+            selected_id = self.model.get_id(index)
+            if self.model.is_section(index):
+                reply = show_confirmation_box("Are you sure?", "Are you sure to delete the section?\n All Playlists and Sections in it will be deleted as well.")
                 if reply == QMessageBox.No:
                     return
-                shutil.rmtree(path)
+                self.model.remove_child(index)
+                self.db.delete_playlist_section(selected_id)
             else:
-                path += unicode(index.data().toString())
-                reply = QMessageBox.question(self, "Are you sure?", "Are you sure to delete the file?", QMessageBox.Yes|QMessageBox.No);
+                reply = show_confirmation_box("Are you sure?", "Are you sure you want to delete the playlist?")
                 if reply == QMessageBox.No:
                     return
-                os.remove(path)
-
-    def get_section(self, index):
-        """
-        get path of selected file or folder
-        """
-        print()
-        print(self.model.index)
-        print()
-        # if self.model.internalPointer(index):
-        #     repath.append(unicode(index.data().toString()))
-        # while True:
-        #     index = index.parent()
-        #     repath.append(unicode(index.data().toString()))
-        #     if index.data().toString() == "playlists":
-        #         break
-
-        # for rpath in reversed(repath):
-        #     path += rpath + "/"
-        # return path
+                self.model.remove_child(index)
+                self.db.delete_playlist(selected_id)
+            self.db.commit()
 
     def search_playlist(self):
         """

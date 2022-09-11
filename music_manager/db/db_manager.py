@@ -112,6 +112,48 @@ class DBManager:
             self.c.execute("INSERT INTO song_playlist VALUES(?,?,?,?)",(song.song_id, playlist_id, song.playlist_played, song.playlist_chance))
         self.commit()
 
+    def delete_playlist(self, playlist_id):
+        self.c.execute("DELETE FROM song_playlist where playlist_id=?",(playlist_id,))
+        self.c.execute("DELETE FROM playlist where playlist_id=?",(playlist_id, ))
+
+    def create_playlist_section(self, section_name, parent):
+        self.c.execute("INSERT INTO playlist_section VALUES (NULL,?,?)", (section_name, parent))
+        self.commit()
+        return self.c.lastrowid
+
+    def delete_playlist_section(self, section_id):
+        child_sections = self.get_all_section_in_section(section_id)
+        for section in child_sections:
+            self.delete_playlist_section(section["playlist_section_id"])
+        playlists = self.get_all_playlists_in_section(section_id)
+        for playlist in playlists:
+            self.delete_playlist(playlist["playlist_id"])
+        self.c.execute("DELETE FROM playlist_section where playlist_section_id=?",(section_id,))
+
+    def get_all_sections(self):
+        self.c.execute("SELECT playlist_section_id, section_name, parent from playlist_section ORDER BY playlist_section_id asc")
+        return self.c.fetchall()
+
+    def get_all_section_in_section(self, section_id):
+        self.c.execute("SELECT playlist_section_id, section_name, parent from playlist_section where parent=?", (section_id,))
+        return self.c.fetchall()
+
+    def get_all_playlists(self):
+        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist")
+        return self.c.fetchall()
+
+    def get_all_playlists_in_section(self, section_id):
+        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_section_fk=?", (section_id, ))
+        return self.c.fetchall()
+
+    def get_playlist_by_name(self, name, section):
+        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk=?",(name, section))
+        return self.c.fetchone()
+
+    def get_all_songs_from_playlist(self, playlist_id):
+        self.c.execute("SELECT song_id, times_played, chance from song_playlist where playlist_id=?",(playlist_id, ))
+        return self.c.fetchall()
+
     def get_or_create_artist_composer(self, type, value):
         '''
         get artist or composer or create it if not exists
@@ -218,25 +260,3 @@ class DBManager:
             return result
         self.c.execute("INSERT INTO genre VALUES (?,?)", (None, genre_name))
         return {"genre_id": self.c.lastrowid, "genre_name": genre_name}
-
-    def create_playlist_section(self, section_name, parent):
-        self.c.execute("INSERT INTO playlist_section VALUES (NULL,?,?)", (section_name, parent))
-        self.commit()
-        return self.c.lastrowid
-
-    def get_all_sections(self):
-        self.c.execute("SELECT playlist_section_id, section_name, parent from playlist_section ORDER BY playlist_section_id asc")
-        return self.c.fetchall()
-
-    def get_all_playlists(self):
-        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist")
-        return self.c.fetchall()
-
-    def get_playlist_by_name(self, name, section):
-        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk=?",(name, section))
-        return self.c.fetchone()
-
-    def get_all_songs_from_playlist(self, playlist_id):
-        self.c.execute("SELECT song_id, times_played, chance from song_playlist where playlist_id=?",(playlist_id, ))
-        return self.c.fetchall()
-        
