@@ -162,7 +162,7 @@ class GUI(QMainWindow, Ui_MainWindow):
         """
         play playlist in random mode
         """
-        self.start_randomplay()
+        self.widget_handler.MUSICPLAYER.start_random_play()
 
     @pyqtSlot()
     def on_playbutton_2_clicked(self):
@@ -199,10 +199,24 @@ class GUI(QMainWindow, Ui_MainWindow):
         """
         change current editable
         """
-
         if self.tableWidget.selectedItems():
-            item = self.tableWidget.selectedItems()[0]
+            items = self.tableWidget.selectedItems()
+            if len(items) > 7:
+                return
+            item = items[0]
             self.widget_handler.MAINTABLE.selection_changed(item)
+
+    @pyqtSlot()
+    def on_playlistWidget_itemSelectionChanged(self):
+        """
+        change current editable
+        """
+        if self.playlistWidget.selectedItems():
+            items = self.playlistWidget.selectedItems()
+            if len(items) > 2:
+                return
+            item = items[0]
+            self.widget_handler.PLAYLIST.selection_changed(item)
 
     @pyqtSlot("QModelIndex")
     def on_playlistTreeView_doubleClicked(self, index):

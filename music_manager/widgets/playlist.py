@@ -23,6 +23,7 @@ class Playlist:
     def setup(self, song_handler):
         self.song_handler = song_handler
         self.widget_handler.GUI.playlistLineEdit.textChanged.connect(self.playlist_name_changed)
+        self.playlist_widget = self.widget_handler.GUI.playlistWidget
         self.create_tree()
 
     def close(self):
@@ -44,18 +45,29 @@ class Playlist:
     def update_db_playlist(self):
         self.db.update_playlist(self.playlist, self.playlist_id, self.playlist_name, self.amount_played)
 
+    def selection_changed(self, item):
+        path = self.playlist_widget.item(item.row(),  0).text()
+        song = self.song_handler.songs.get(path)
+
+        if not song.path.exists():
+            self.disable_row(song)
+            return
+        self.widget_handler.SHORTEDIT.set_info(song)
+        self.playlist_widget.scrollToItem(item)
+        self.widget_handler.MAINTABLE.select_row_by_song(song)
+
     def get_playlist_item(self, song):
         """
         get the playlistwidgetitem with song
         """
-        for i in range(self.widget_handler.GUI.playlistWidget.rowCount()):
-            if song.raw_path == self.widget_handler.GUI.playlistWidget.item(i, 0).text():
-                return self.widget_handler.GUI.playlistWidget.item(i, 0)
+        for i in range(self.playlist_widget.rowCount()):
+            if song.raw_path == self.playlist_widget.item(i, 0).text():
+                return self.playlist_widget.item(i, 0)
 
     def disable_row(self, song):
         row = self.widget_handler.PLAYLIST.get_playlist_item(song.raw_path).row()
-        for c in range(self.widget_handler.GUI.playlistWidget.columnCount()):
-            item = self.widget_handler.GUI.playlistWidget.item(row, c)
+        for c in range(self.playlist_widget.columnCount()):
+            item = self.playlist_widget.item(row, c)
             item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
 
     def get_not_disabled_songs(self):
@@ -72,7 +84,7 @@ class Playlist:
         """
         set the next song in normal mode
         """
-        path = self.widget_handler.GUI.playlistWidget.item(index,  0).text()
+        path = self.playlist_widget.item(index,  0).text()
         song = self.playlist[path]
         if not song.path.exists() or song.disabled:
             song.disable()
@@ -162,14 +174,14 @@ class Playlist:
                 qtitle = QTableWidgetItem(song.title)
             qlength = QTableWidgetItem(orlength)
             qlength.setTextAlignment(Qt.AlignRight | Qt.AlignCenter)
-            row = self.widget_handler.GUI.playlistWidget.rowCount()
-            self.widget_handler.GUI.playlistWidget.insertRow(row)
-            self.widget_handler.GUI.playlistWidget.setItem(row, 0, QTableWidgetItem(song.raw_path))
-            self.widget_handler.GUI.playlistWidget.setItem(row, 1, qtitle)
-            self.widget_handler.GUI.playlistWidget.setItem(row, 2, qlength)
+            row = self.playlist_widget.rowCount()
+            self.playlist_widget.insertRow(row)
+            self.playlist_widget.setItem(row, 0, QTableWidgetItem(song.raw_path))
+            self.playlist_widget.setItem(row, 1, qtitle)
+            self.playlist_widget.setItem(row, 2, qlength)
             self.playlist[song.raw_path] = song
             # if sort:
-            #     self.widget_handler.GUI.playlistWidget.sortItems(1)
+            #     self.playlist_widget.sortItems(1)
         except (KeyError, UnboundLocalError):
             pass
 
@@ -221,6 +233,18 @@ class Playlist:
                 self.db.delete_playlist(selected_id)
             self.db.commit()
 
+    def remove_selected(self):
+        if self.playlist_widget.selectedItems():
+            rows = []
+            for i in self.playlist_widget.selectedIndexes():
+                rows.append(i.row())
+            rows = list(set(rows))
+
+            for row in reversed(rows):
+                path = self.playlist_widget.item(row,0).text()
+                del self.playlist[path]
+                self.playlist_widget.removeRow(row)
+
     def search_playlist(self):
         """
         search a playlist or section
@@ -262,7 +286,7 @@ class Playlist:
             reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-        self.widget_handler.GUI.playlistWidget.setRowCount(0)
+        self.playlist_widget.setRowCount(0)
         self.reset_all()
 
         self.playlist_id = self.model.get_id(index)
@@ -283,7 +307,7 @@ class Playlist:
             show_error_box("No Playlist Name", "Please insert a name for the before saving playlist!")
             return
         
-        if self.widget_handler.GUI.playlistWidget.rowCount() == 0:
+        if self.playlist_widget.rowCount() == 0:
             show_error_box("No Songs Selected", "Please Drag and Drop some songs in the first Playlist!")
             return
 
@@ -291,14 +315,19 @@ class Playlist:
             section_id = self.section_id
         else:
             section_id = self.selected_section_id
-        if self.db.get_playlist_by_name(self.playlist_name, section_id):
+        db_playlist = self.db.get_playlist_by_name(self.playlist_name, section_id)
+        if db_playlist:
             reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-        playlist_id = self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
+            self.db.update_playlist(self.playlist, self.playlist_id, self.playlist_name, self.amount_played)
+            self.db.add_songs_to_playlist(self.playlist, self.playlist_id)
+            self.db.remove_songs_from_playlist(self.playlist, self.playlist_id)
+        else:
+            playlist_id = self.db.create_playlist(self.playlist, self.playlist_name, self.amount_played, section_id)
+            playlist = {"playlist_id": playlist_id, "playlist_name": self.playlist_name, "playlist_section_fk": section_id}
+            self.add_item_playlist_tree_view(playlist, False)
 
-        playlist = {"playlist_id": playlist_id, "playlist_name": self.playlist_name, "playlist_section_fk": section_id}
-        self.add_item_playlist_tree_view(playlist, False)
 
     def table_to_playlist(self):
         """
@@ -308,7 +337,7 @@ class Playlist:
             reply = show_confirmation_box("Playlist overwrite", "Are you sure you want to overwrite the playlist?")
             if reply == QMessageBox.No:
                 return
-        self.widget_handler.GUI.playlistWidget.setRowCount(0)
+        self.playlist_widget.setRowCount(0)
         self.update_db_playlist()
         self.playlist = {}
         songs = self.song_handler.get_filtered_songs()
@@ -318,9 +347,9 @@ class Playlist:
             self.playlist[song.raw_path] = song
         song = self.widget_handler.MAINTABLE.get_selected_song()
         item = self.get_playlist_item(song)
-        self.widget_handler.GUI.playlistWidget.setCurrentItem(item)
-        self.widget_handler.GUI.playlistWidget.setFocus()
-        self.widget_handler.GUI.playlistWidget.setCurrentCell(self.widget_handler.GUI.playlistWidget.currentRow(), 1)
+        self.playlist_widget.setCurrentItem(item)
+        self.playlist_widget.setFocus()
+        self.playlist_widget.setCurrentCell(self.playlist_widget.currentRow(), 1)
 
     def playlist_tree_context_menu(self, pos):
         """
@@ -343,10 +372,10 @@ class Playlist:
 
     def shuffle(self):
         if self.playlist:
-            self.widget_handler.GUI.playlistWidget.setRowCount(0)
+            self.playlist_widget.setRowCount(0)
             songs = list(self.playlist.values())
             shuffle(songs)
             self.playlist = {}
             self.playlist_add_songs(songs)
-            self.widget_handler.GUI.playlistWidget.setFocus()
-            self.widget_handler.GUI.playlistWidget.setCurrentCell(0, 1)
+            self.playlist_widget.setFocus()
+            self.playlist_widget.setCurrentCell(0, 1)

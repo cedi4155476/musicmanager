@@ -105,11 +105,30 @@ class DBManager:
         self.c.execute("UPDATE playlist SET amount_played=?, playlist_name=? WHERE playlist_id=?",(amount_played, playlist_name, playlist_id))
         self.commit()
 
+    def add_songs_to_playlist(self, playlist, playlist_id):
+        songs = self.get_all_songs_from_playlist(playlist_id)
+        song_id_list = []
+        for song in songs:
+            song_id_list.append(song["song_id"])
+        for song in playlist.values():
+            if song.song_id not in song_id_list:
+                self.c.execute("INSERT INTO song_playlist VALUES(?,?,?,?)",(song.song_id, playlist_id, song.playlist_played, song.playlist_chance))
+        self.commit()
+
+    def remove_songs_from_playlist(self, playlist, playlist_id):
+        db_songs = self.get_all_songs_from_playlist(playlist_id)
+        song_id_list = []
+        for song in playlist.values():
+            song_id_list.append(song.song_id)
+        for song in db_songs:
+            if song["song_id"] not in song_id_list:
+                self.c.execute("DELETE FROM song_playlist where playlist_id=? and song_id=?", (playlist_id, song["song_id"]))
+        self.commit()
+
     def create_playlist(self, playlist, playlist_name, amount_played, playlist_section):
         self.c.execute("INSERT INTO playlist VALUES(NULL,?,?,?)",(playlist_name, amount_played, playlist_section))
         playlist_id = self.c.lastrowid
-        for song in playlist.values():
-            self.c.execute("INSERT INTO song_playlist VALUES(?,?,?,?)",(song.song_id, playlist_id, song.playlist_played, song.playlist_chance))
+        self.add_songs_to_playlist(playlist, playlist_id)
         self.commit()
 
     def delete_playlist(self, playlist_id):
@@ -147,8 +166,12 @@ class DBManager:
         return self.c.fetchall()
 
     def get_playlist_by_name(self, name, section):
-        self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk=?",(name, section))
-        return self.c.fetchone()
+        if section:
+            self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk=?",(name, section))
+        else:
+            self.c.execute("SELECT playlist_id, playlist_name, playlist_section_fk from playlist where playlist_name=? and playlist_section_fk IS NULL",(name,))
+        result = self.c.fetchone()
+        return result
 
     def get_all_songs_from_playlist(self, playlist_id):
         self.c.execute("SELECT song_id, times_played, chance from song_playlist where playlist_id=?",(playlist_id, ))

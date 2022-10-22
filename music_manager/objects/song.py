@@ -45,7 +45,7 @@ class Song(object):
         self.times_played = info.get("times_played", 0)
         self.rating = info.get("rating", 20)
         self.playlist_played = 0
-        self.playlist_chance = 0
+        self.playlist_chance = 1
         
     def __eq__(self, other):
         return_value = True 

@@ -56,6 +56,7 @@ class MusicPlayer(QDialog, Ui_music):
         self.loop.timeout.connect(self.update_time)
         self.player= pyglet.media.Player()
         self.volume = self.config.get_volume()
+        self.current_song = None
         self.musicplayersetslots()
 
     def save_volume(self):
@@ -287,6 +288,7 @@ class MusicPlayer(QDialog, Ui_music):
         change the tray icon and start playing
         """
         self.widget_handler.GUI.tray_icon.setIcon(QIcon('resources/trayiconplay.png'))
+        self.widget_handler.GUI.playpausebutton.setIcon(QIcon('resources/pause.png'))
         self.player.play()
 
     def pause(self):
@@ -294,22 +296,28 @@ class MusicPlayer(QDialog, Ui_music):
         change the tray icon and pause the player
         """
         self.widget_handler.GUI.tray_icon.setIcon(QIcon('resources/trayiconpause.png'))
+        self.widget_handler.GUI.playpausebutton.setIcon(QIcon('resources/play.png'))
         self.player.pause()
 
     def play_pause_button_clicked(self):
         if self.player.playing:
             self.pause()
-            self.widget_handler.GUI.playpausebutton.setIcon(QIcon('resources/play.png'))
         else:
             self.play()
-            self.widget_handler.GUI.playpausebutton.setIcon(QIcon('resources/pause.png'))
 
     def play_next_song(self):
         """
         wait for loading and then start next song
         """
-        time.sleep(0.2)
-        self.player.next_source()
+        playing = self.player.playing
+        if self.player.source:
+            self.player.next_source()
+        source= pyglet.media.load(self.current_song.raw_path)
+        self.player.queue(source)
+        if playing and not self.player.playing:
+            self.player.seek(self.START)
+            time.sleep(0.1)
+            self.player.play()
 
     def play_selected_song(self):
         """
@@ -328,14 +336,9 @@ class MusicPlayer(QDialog, Ui_music):
                 self.start_loop()
             self.index = self.widget_handler.GUI.playlistWidget.currentRow()
             self.current_song = self.widget_handler.PLAYLIST.get_song_with_index(self.index)
-            source = pyglet.media.load(self.current_song.raw_path)
-            self.player.queue(source)
+            self.play_next_song()
             self.get_infos()
-            if self.player.playing:
-                self.play_next_song()
-            else:
-                self.play()
-            self.widget_handler.GUI.playpausebutton.setIcon(QIcon('resources/pause.png'))
+            self.play()
         except FileDeletedException:
             self.widget_handler.GUI.musicframe.setVisible(False)
             return
@@ -364,8 +367,6 @@ class MusicPlayer(QDialog, Ui_music):
             self.current_song.disable()
             self.widget_handler.PLAYLIST.disable_row(self.current_song)
             raise FileDeletedException
-        source = pyglet.media.load(self.current_song.raw_path)
-        self.player.queue(source)
         self.get_infos()
 
     def load_next_normal_song(self):
@@ -378,29 +379,33 @@ class MusicPlayer(QDialog, Ui_music):
             self.index += 1
         self.current_song = self.widget_handler.PLAYLIST.get_song_with_index(self.index)
         self.widget_handler.GUI.playlistWidget.setCurrentCell(self.index, 1)
-        source = pyglet.media.load(self.current_song.raw_path)
-        self.player.queue(source)
         self.get_infos()
 
     def load_next_random_song(self):
-        song = self.widget_handler.PLAYLIST.get_next_random_song()
+        self.current_song = self.widget_handler.PLAYLIST.get_next_random_song()
         self.index = len(self.songlist)
-        self.songlist.append(song)
-        source= pyglet.media.load(song.raw_path)
-        self.player.queue(source)
+        self.songlist.append(self.current_song)
+        self.get_infos()
 
     def load_last(self):
         """
         play last song
         """
         if self.player.time > 3:
-            self.player.seek(self.START)
+            if self.player.playing:
+                self.player.pause()
+                self.player.seek(self.START)
+                time.sleep(0.1)
+                self.player.play()
+            else:
+                self.player.seek(self.START)
+            self.update_progress(int(self.player.time))
             return
 
         try:
             if self.RANDOMNESS:
                 if self.index <= 0: #  Its not possible to go back before the first song
-                    self.player.seek(self.START)
+                    return
                 elif self.index > 0:
                     self.load_last_random_song()
             else:
@@ -420,8 +425,6 @@ class MusicPlayer(QDialog, Ui_music):
             self.index -= 1
         self.current_song = self.widget_handler.PLAYLIST.get_song_with_index(self.index)
         self.widget_handler.GUI.playlistWidget.setCurrentCell(self.index, 1)
-        source = pyglet.media.load(self.current_song.raw_path)
-        self.player.queue(source)
         self.get_infos()
 
     def load_last_random_song(self):
@@ -435,15 +438,13 @@ class MusicPlayer(QDialog, Ui_music):
             self.current_song.disable()
             self.widget_handler.PLAYLIST.disable_row(self.current_song)
             raise FileDeletedException
-        source = pyglet.media.load(self.current_song.raw_path)
-        self.player.queue(source)
         self.get_infos()
 
     def start_random_play(self):
         """
         start playing in random mode
         """
-        if not self.playlist:
+        if not self.widget_handler.PLAYLIST.playlist:
             return
         if not self.widget_handler.GUI.musicframe.isVisible():
             self.widget_handler.GUI.musicframe.setVisible(True)
@@ -451,15 +452,12 @@ class MusicPlayer(QDialog, Ui_music):
         self.songlist = []
         self.index = 0
         self.start_loop()
-        self.load_next_random_song()
-
-        self.get_infos()
-        if self.player.source:
-            self.play_next_song()
-        self.play()
         self.player.volume = self.volume
         self.soundSlider.setValue(self.volume)
         self.soundSlider.setSliderPosition(self.volume)
+        self.load_next_random_song()
+        self.play_next_song()
+        self.play()
 
     def get_infos(self):
         """
@@ -490,7 +488,7 @@ class MusicPlayer(QDialog, Ui_music):
         """
         update the time in the progress bar
         """
-        if self.player.playing:
+        if self.player.playing and self.current_song:
             self.update_progress(self.player.time)
             if int(self.player.time) >= self.current_song.length:
                 self.playlist[self.Ppath].update_timesplayed()

@@ -38,16 +38,7 @@ class EventHandler(QObject):
                     self.playCurrentSong()
                     self.playlistWidget.setCurrentCell(self.widget_handler.GUI.playlistWidget.currentRow(), 1)
                 elif e.key() == Qt.Key_Delete:
-                    if source.selectedItems():
-                        rows = []
-                        for i in source.selectedIndexes():
-                            rows.append(i.row())
-                        rows = list(set(rows))
-
-                        for row in reversed(rows):
-                            print(row)
-                            print(row[1])
-                        #     source.removeRow(row)
+                    self.widget_handler.PLAYLIST.remove_selected()
 
         if source == self.widget_handler.GUI.playlistTreeView:
             if e.type() == QEvent.KeyPress:
